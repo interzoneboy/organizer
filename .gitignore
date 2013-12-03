@@ -1,6 +1,7 @@
+*~
 *.pyc
 bin
 include
 lib
-share
 local
+share

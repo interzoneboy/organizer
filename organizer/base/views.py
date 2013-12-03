@@ -6,7 +6,8 @@
 # [a for a in ...] comprehension structure is used so that actual lists of objects are returned
 # from these functions, not unexecuted django querysets.
 #
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
+from django.template import RequestContext, loader
 from base.models import ContentNode, NodeType
 from base.models import Link, LinkType
 
@@ -31,8 +32,29 @@ def getGraphFrom_json(nodeID, linkTypeID=None):
     # returned by this function.
     pass
 
-def filterNodes(...):
+def filterNodes():
     pass
 
-def filterLinks(...):
+def filterLinks():
     pass
+
+
+## Here, for now, some GTD specific functions.
+
+def getParents(node, *args, **kwargs):
+    """
+    Retrieve the parent nodes of a given node.
+    """
+    pass
+
+def getChildren(node, *args, **kwargs):
+    """
+    Retrieve the children nodes of a given node.
+    """
+
+def showMain(request):
+    nodes = ContentNode.objects.all()
+    links = Link.objects.all()
+    return render_to_response('base/showMain.html', {'nodes':nodes, 'links':links}, context_instance=RequestContext(request))
+    
+    

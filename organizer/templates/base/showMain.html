@@ -1,0 +1,27 @@
+
+{% extends "base/base.html" %}
+
+{% block title %}
+Organizer Thing
+{% endblock title%}
+
+{% block scripts %}
+<link rel="stylesheet" type="text/css" media="screen" href="{{staticURL}}organizerStyle.css" />
+{% endblock scripts %}
+
+{% block content %}
+<h1>NODES</h1>
+{% for nn in nodes %}
+<div class="nodeDiv">
+{{ee.getJson}}
+</div>
+{% endfor %}
+
+<h1>LINKS</h1>
+{% for ll in links %}
+<div class="linkDiv">
+{{ll.getJson}}
+</div>
+{% endfor %}
+
+{% endblock content %}
