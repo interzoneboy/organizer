@@ -6,6 +6,7 @@
 # documentation, read, parse, and store files  and filecontents, be a good heads-up-display for
 # analysis and for running servers, ...
 
+import json
 from django.db import models
 
 # Create your models here.
@@ -21,6 +22,9 @@ class NodeType(models.Model):
     def getJson(self):
         dStr = json.dumps(self.getDict())
         return(dStr)
+        
+    def __unicode__(self):
+        return u'%s' % (self.name,)
 
 
 class ContentNode(models.Model):
@@ -34,7 +38,10 @@ class ContentNode(models.Model):
         return(d)
     def getJson(self):
         dStr = json.dumps(self.getDict())
-        return(d)
+        return(dStr)
+
+    def __unicode__(self):
+        return u'%s: %s' % (self.name, str(self.nodeType))
 
 
 
@@ -48,6 +55,9 @@ class LinkType(models.Model):
     def getJson(self):
         dStr = json.dumps(self.getDict())
         return(dStr)
+
+    def __unicode__(self):
+        return u'%s' % (self.name,)
         
 class Link(models.Model):
     linkType = models.ForeignKey('LinkType')
@@ -68,4 +78,11 @@ class Link(models.Model):
     def getJson(self):
         dStr = json.dumps(self.getDict())
         return(dStr)
+
+    def __unicode__(self):
+        return u'%s: %s -- %s, %s' % (str(self.linkType),
+                                      str(self.pointA),
+                                      str(self.pointB),
+                                      str(self.direct))
+    
         
