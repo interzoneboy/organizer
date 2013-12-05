@@ -46,6 +46,9 @@ d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
     start();
 });
 
+
+// ::TODO:: This function is duplicating everything when it's called! 
+//          Find out why and fix this.
 function start() {
     link = link.data(force.links());
     link.enter().append("line").attr("class","link");
