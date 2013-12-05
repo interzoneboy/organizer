@@ -42,13 +42,16 @@ d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
     force.nodes(graph.nodes)
          .links(graph.links)
          .start();    
-    link = link.data(graph.links)
-       .enter().append("line")
-         .attr("class","link");
-    node = node.data(graph.nodes)
-       .enter().append("g")
-          .attr("class","node")
-          .call(drag);
+
+    start();
+});
+
+function start() {
+    link = link.data(force.links());
+    link.enter().append("line").attr("class","link");
+    link.exit().remove();
+    node = node.data(force.nodes());
+    node.enter().append("g").attr("class","node").call(drag);
     node.append("circle")
 	.attr("r", 12);
     node.append("text")
@@ -69,7 +72,10 @@ d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
 	d3.select(this).select("text").classed("clickSelected",true);
 	currentObjectClick = this;
     });
-});
+    node.exit().remove();
+    force.start();
+}
+    
 
 
 function tick() {
@@ -94,16 +100,25 @@ d3.select("body")
     .on("keydown", function(){
 	var kcode = d3.event.keyCode;
 	if(kcode==76){
+	    flashText("addingLink");
 	    addLink();
 	}
     });
-
-</script>
+function flashText(txt){
+    svg.append("text").attr("x","100")
+	.attr("y","100")
+	.style("font-size","26px")
+	.text(""+txt)
+	.transition().duration(2000)
+	.style("font-size","5px")
+	.style("fill-opacity",".1")
+	.remove();
+}
 
 function addLink(){
     
 
 }
 
-
+</script>
 {% endblock d3Script %}
