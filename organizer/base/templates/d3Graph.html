@@ -1,0 +1,109 @@
+
+{% extends "base.html" %}
+ {% load staticfiles %}
+
+ {% block scripts %}
+ <link rel="stylesheet" type="text/css" href="{% static 'd3GraphCSS.css' %}"/>
+ {% endblock scripts %}
+
+ {% block d3Script %}
+ <script src="http://d3js.org/d3.v3.min.js"></script>
+ <script>
+
+ var width = 960;
+ var height = 500;
+
+var force = d3.layout.force()
+    .size([width,height])
+    .charge(-400)
+    .linkDistance(40)
+    .on("tick", tick);
+
+var drag = force.drag()
+    .on("dragstart", dragstart);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var link = svg.selectAll(".link");
+var node = svg.selectAll(".node");
+
+// This keeps track of the last node the mouse was over.
+var currentObjectMouse = null;
+// This keeps track of the last node the user clicked on.
+var currentObjectClick = null;
+
+
+
+
+d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
+    if(error){alert("Err: "+error);}
+    force.nodes(graph.nodes)
+         .links(graph.links)
+         .start();    
+    link = link.data(graph.links)
+       .enter().append("line")
+         .attr("class","link");
+    node = node.data(graph.nodes)
+       .enter().append("g")
+          .attr("class","node")
+          .call(drag);
+    node.append("circle")
+	.attr("r", 12);
+    node.append("text")
+	.attr("dx", 12)
+	.attr("dy", ".15em")
+	.text(function(d){return d.name});
+    node.on("mouseover", function(){
+	if(currentObjectMouse!=null){
+	    d3.select(currentObjectMouse).select("text").classed("mouseOverSelected",false);
+	}
+	d3.select(this).select("text").classed("mouseOverSelected",true);
+	currentObjectMouse = this;
+    })
+    .on("mousedown", function(){
+	if(currentObjectClick!=null){
+	    d3.select(currentObjectClick).select("text").classed("clickSelected",false);
+	}
+	d3.select(this).select("text").classed("clickSelected",true);
+	currentObjectClick = this;
+    });
+});
+
+
+function tick() {
+    link.attr("x1", function(d){return d.source.x;})
+	.attr("y1", function(d){return d.source.y;})
+	.attr("x2", function(d){return d.target.x;})
+	.attr("y2", function(d){return d.target.y;});
+
+    //node.attr("cx", function(d){return d.x;})
+    //    .attr("cy", function(d){return d.y;});
+    node.attr("transform", function(d){return "translate("+d.x+","+d.y+")";});
+}
+
+function dragstart(d){
+    d.fixed = true;
+    d3.select(this).classed("fixed", true);
+}
+
+// Handling the key events.
+// This might be a bit rough for a while as I learn how to do this.
+d3.select("body")
+    .on("keydown", function(){
+	var kcode = d3.event.keyCode;
+	if(kcode==76){
+	    addLink();
+	}
+    });
+
+</script>
+
+function addLink(){
+    
+
+}
+
+
+{% endblock d3Script %}

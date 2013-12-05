@@ -10,4 +10,6 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^organizer/', 'base.views.showMain', name='main'),
+    url(r'^graph/','base.views.showD3_graph_test', name='showD3_graph_test'),
+    url(r'^getGraph/','base.views.getGraph', name='getGraph'),
 )

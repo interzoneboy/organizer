@@ -1,0 +1,30 @@
+.link {
+    stroke: #000;
+    stroke-width: 1.5px;
+}
+
+.node circle {
+    cursor: move;
+    fill:#ccc;
+    stroke: #000;
+    stroke-width: 3px;
+}
+
+.node.fixed {
+    fill: #f00;
+}
+
+.node text {
+    pointer-events: none;
+    font: 10px sans-serif;
+    fill: black;
+}
+
+.node text.clickSelected {
+    fill: blue;
+    font: 14px sans-serif;
+}
+.node text.mouseOverSelected {
+    fill: red;
+    font: 14px sans-serif;
+}

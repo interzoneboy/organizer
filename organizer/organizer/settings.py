@@ -89,4 +89,4 @@ USE_TZ = True
 STATIC_URL = '/organizerStatic/'
 STATIC_ROOT = '/home/matt/Code/Tools/organizer/static/'
 
-TEMPLATE_DIRS = ('/home/matt/Code/Tools/organizer/organizer/templates/',)
+TEMPLATE_DIRS = ('/home/matt/Code/Tools/organizer/organizer/base/templates/',)

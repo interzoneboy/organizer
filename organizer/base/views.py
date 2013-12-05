@@ -6,10 +6,12 @@
 # [a for a in ...] comprehension structure is used so that actual lists of objects are returned
 # from these functions, not unexecuted django querysets.
 #
+from django.http import HttpResponse
 from django.shortcuts import render, render_to_response
 from django.template import RequestContext, loader
 from base.models import ContentNode, NodeType
 from base.models import Link, LinkType
+import json
 
 
 # Create your views here.
@@ -32,6 +34,21 @@ def getGraphFrom_json(nodeID, linkTypeID=None):
     # returned by this function.
     pass
 
+def getGraph(request):
+    # Let's just get the graphs nodes, figure out what the indices in the list should be (?), then consult the links
+    # and populate a link structure using the indices. The node array and link array must minimally conform to the
+    # specifications for a d3 force directed layout.
+    # ::TODO:: figure out how the position in the node list affects the layout. Is the first node always the root (eg?)
+    allNodes = [a for a in ContentNode.objects.all()]
+    allLinks = [a for a in Link.objects.all()]
+
+    # We sort the list of nodes so the positions correspond to the db ids. We can then use the ids that the links store,
+    # and these will refer to the positions in the list that d3 wants to see.
+    allNodes_dicts = [{'index':a.id, 'name':a.name} for a in sorted(allNodes,key=lambda x: x.id)]
+    allLinks_dicts = [{'source':a.pointA_id, 'target':a.pointB_id} for a in allLinks]
+    retDict = {'nodes':allNodes_dicts, 'links':allLinks_dicts}
+    return HttpResponse(json.dumps(retDict), mimetype='application/json')
+
 def filterNodes():
     pass
 
@@ -39,7 +56,7 @@ def filterLinks():
     pass
 
 
-## Here, for now, some GTD specific functions.
+
 
 def getParents(node, *args, **kwargs):
     """
@@ -55,6 +72,8 @@ def getChildren(node, *args, **kwargs):
 def showMain(request):
     nodes = ContentNode.objects.all()
     links = Link.objects.all()
-    return render_to_response('base/showMain.html', {'nodes':nodes, 'links':links}, context_instance=RequestContext(request))
+    return render_to_response('showMain.html', {'nodes':nodes, 'links':links}, context_instance=RequestContext(request))
     
     
+def showD3_graph_test(request):
+    return render_to_response('d3Graph.html', {}, context_instance=RequestContext(request))

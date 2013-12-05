@@ -1,8 +1,8 @@
 *~
 *.pyc
-bin
-include
-lib
-local
-share
-static
+/bin
+/include
+/lib
+/local
+/share
+/static
