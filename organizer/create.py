@@ -1,6 +1,9 @@
 
 from base.models import ContentNode, Link, NodeType, LinkType
 
+for nn in ["gtd_realm","gtd_area","gtd_project","gtd_task","gtd_status","gtd_context"]:
+    newNode = NodeType(name=nn)
+    newNode.save()
 
 def makeGen1(name, gtdType, content="Example Content"):
     nn = ContentNode(name=name, nodeType=NodeType.objects.get(name=gtdType), content=content)
