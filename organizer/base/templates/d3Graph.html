@@ -10,8 +10,8 @@
  <script src="http://d3js.org/d3.v3.min.js"></script>
  <script>
 
- var width = 960;
- var height = 500;
+ var width = 1020;
+ var height = 800;
 
 var force = d3.layout.force()
     .size([width,height])
@@ -26,8 +26,11 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var link = svg.selectAll(".link");
-var node = svg.selectAll(".node");
+var linkVis = svg.append("svg:g");
+var nodeVis = svg.append("svg:g");
+
+var link = linkVis.selectAll(".link");
+var node = nodeVis.selectAll(".node");
 
 // This keeps track of the last node the mouse was over.
 var currentObjectMouse = null;
@@ -54,21 +57,21 @@ function start() {
     link.enter().append("line").attr("class","link");
     link.exit().remove();
     node = node.data(force.nodes());
-    node.enter().append("g").attr("class","node").call(drag);
-    node.append("circle")
+    thing = node.enter().append("g").attr("class","node").call(drag);
+    thing.append("circle")
 	.attr("r", 12);
-    node.append("text")
+    thing.append("text")
 	.attr("dx", 12)
 	.attr("dy", ".15em")
 	.text(function(d){return d.name});
-    node.on("mouseover", function(){
+    thing.on("mouseover", function(){
 	if(currentObjectMouse!=null){
 	    d3.select(currentObjectMouse).select("text").classed("mouseOverSelected",false);
 	}
 	d3.select(this).select("text").classed("mouseOverSelected",true);
 	currentObjectMouse = this;
-    })
-    .on("mousedown", function(){
+    });
+    thing.on("mousedown", function(){
 	if(currentObjectClick!=null){
 	    d3.select(currentObjectClick).select("text").classed("clickSelected",false);
 	}
@@ -119,8 +122,11 @@ function flashText(txt){
 }
 
 function addLink(){
-    
-
+    var clickIndex = currentObjectClick.__data__.index;
+    var mouseIndex = currentObjectMouse.__data__.index;
+    var oldLinks = force.links();
+    var newLinks = oldLinks.push({"source":clickIndex, "target":mouseIndex});
+    start();
 }
 
 </script>
