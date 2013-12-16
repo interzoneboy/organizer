@@ -49,6 +49,21 @@ def getGraph(request):
     retDict = {'nodes':allNodes_dicts, 'links':allLinks_dicts}
     return HttpResponse(json.dumps(retDict), mimetype='application/json')
 
+def addLink(request):
+    pass
+
+def removeLink(request):
+    pass
+
+def addNode(request):
+    pass
+
+def removeNode(request):
+    pass
+    
+def setNodeType(request):
+    pass
+
 def filterNodes():
     pass
 

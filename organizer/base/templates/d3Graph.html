@@ -61,8 +61,10 @@ d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
 });
 
 
-// ::TODO:: This function is duplicating everything when it's called! 
-//          Find out why and fix this.
+// ::TODODone:: This function is duplicating everything when it's called! 
+//          Find out why and fix this. Well, it was because of incorrect nesting in
+//          the d3 calls. Each update was calling an append it shouldn't have, so the
+//          nodes just kept getting stacked on there.
 function start() {
     link = link.data(force.links());
     link.enter().append("line").attr("class","link");
@@ -121,9 +123,15 @@ function zoom(){
 d3.select("body")
     .on("keydown", function(){
 	var kcode = d3.event.keyCode;
-	if(kcode==76){
-	    flashText("addingLink");
+	if(kcode==76){ // This is 'l'
+	    flashText("adding Link");
 	    addLink();
+	}else if(kcode==65){ // This is 'a' for 'add'
+	    flashText("adding Node");
+	    addNode();
+	}else if(kcode==69){ // This is 'e' for 'edit'
+	    flashText("editing Node");
+	    editNode();
 	}
     });
 function flashText(txt){
@@ -143,6 +151,14 @@ function addLink(){
     var oldLinks = force.links();
     var newLinks = oldLinks.push({"source":clickIndex, "target":mouseIndex});
     start();
+}
+
+function addNode(){
+    alert("addNode not yet implemented");
+}
+
+function editNode(){
+    alert("editNode not yet implemented");
 }
 
 </script>
