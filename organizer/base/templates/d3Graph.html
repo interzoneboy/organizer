@@ -20,6 +20,10 @@
  <option value="{{nodeType.name}}">{{nodeType.name}}</option>
  {% endfor %}
  </select>
+ 
+ <button type="button" onclick="storeNodePos()">StoreNodePos</button>
+
+ <button type="button" onclick="resetNodePos()">ResetNodePos</button>
 
  <div id="spinner-box"></div>
 
@@ -151,6 +155,7 @@ function tick() {
 }
 
 function dragstart(d){
+ 
     d.fixed = true;
     d3.select(this).classed("fixed", true);
     d3.event.sourceEvent.stopPropagation();
@@ -195,17 +200,18 @@ function addLink(){
     var mouseIndex = currentObjectMouse.__data__.index;
     var mouseName = currentObjectMouse.__data__.name;
     var linkType = $('#linkTypeSelector')[0].options[$('#linkTypeSelector')[0].selectedIndex].value;
-    addLinkToDB(clickName, mouseName, linkType);
-    var oldLinks = force.links();
-    var newLinks = oldLinks.push({"source":clickIndex, "target":mouseIndex});
-    start();
+    function addLinkCallback(){
+        var oldLinks = force.links();
+        var newLinks = oldLinks.push({"source":clickIndex, "target":mouseIndex});
+        start();
+    }
+    addLinkToDB(clickName, mouseName, linkType, addLinkCallback);
 }
 function removeLink(){
     var clickIndex = currentObjectClick.__data__.index;
     var clickName = currentObjectClick.__data__.name;
     var mouseIndex = currentObjectMouse.__data__.index;
     var mouseName = currentObjectMouse.__data__.name;
-    removeLinkFromDB(clickName, mouseName);
     var currentLinks = force.links();
     function compare(link1, link2){
         var l1s = link1.source.name;
@@ -226,11 +232,14 @@ function removeLink(){
             }
         }
     }
-    remove(currentLinks, {"source":clickName, "target":mouseName});
-    start();
+    function removeLinkCallback(){
+        remove(currentLinks, {"source":clickName, "target":mouseName});
+        start();
+    }
+    removeLinkFromDB(clickName, mouseName, removeLinkCallback);
 }
 
-function addLinkToDB(aN, bN, lType){
+function addLinkToDB(aN, bN, lType, addLinkCallback){
     $.ajax({
         beforeSend: function(){
             spinner.spin(spinnerTarget);
@@ -242,12 +251,14 @@ function addLinkToDB(aN, bN, lType){
         url: 'http://localhost/organizer/addLink/',
         data: {'from':aN, 'to':bN, 'type':lType, 'csrfmiddlewaretoken':'{{csrf_token}}'}, // data
         success: function(data, txtStatus, jqXHR){
-            globoData = data;
-            globoTxtStatus = txtStatus;
-            globoXHR = jqXHR;
-            console.log(" "+data)
-            console.log(" "+txtStatus)
-            console.log(" "+jqXHR)
+            if(data['status']==="success"){
+                addLinkCallback();
+            }else{
+                alert("Error Occurring on server. Check js console.");
+                console.log(" "+data)
+                console.log(" "+txtStatus)
+                console.log(" "+jqXHR)
+            }
         },
         error: function(e1,e2,e3){
             alert("Add Link Ajax Failed: "+e1+" \n"+e2+" \n"+e3);
@@ -255,7 +266,7 @@ function addLinkToDB(aN, bN, lType){
     });
 }
  
-function removeLinkFromDB(aN, bN){
+function removeLinkFromDB(aN, bN, removeLinkCallback){
     $.ajax({
         beforeSend: function(){
             spinner.spin(spinnerTarget);
@@ -267,12 +278,29 @@ function removeLinkFromDB(aN, bN){
         url: 'http://localhost/organizer/removeLink/',
         data: {'from':aN, 'to':bN, 'csrfmiddlewaretoken':'{{csrf_token}}'},
         success: function(data, txtStatus, jqXHR){
+            if(data['status']==="success"){
+                removeLinkCallback();
+            }else{
+                alert("Error Occurring on server. Check js console.");
+                console.log(" "+data)
+                console.log(" "+txtStatus)
+                console.log(" "+jqXHR)
+            }
+
         },
         error: function(e1,e2,e3){
+            alert("Remove Link Ajax Failed: "+e1+" \n"+e2+" \n"+e3);
         }
     });    
 }
 
+function storeNodePos(){
+    alert("called storeNodePos");
+}
+
+function resetNodePos(){
+    alert("called resetNodePos");
+}
 
 function addNode(){
     alert("addNode not yet implemented");

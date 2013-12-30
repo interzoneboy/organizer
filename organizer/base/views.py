@@ -11,6 +11,7 @@ from django.shortcuts import render, render_to_response
 from django.template import RequestContext, loader
 from base.models import ContentNode, NodeType
 from base.models import Link, LinkType
+from django.db.models import Q
 import json
 
 
@@ -42,8 +43,8 @@ def getGraph(request):
     allNodes = [a for a in ContentNode.objects.all()]
     allLinks = [a for a in Link.objects.all()]
 
-    # We sort the list of nodes so the positions correspond to the db ids. We can then use the ids that the links store,
-    # and these will refer to the positions in the list that d3 wants to see.
+    # We sort the list of nodes (for no real reason, now), and we use the calcLinkIndices helper function to compute
+    # the indexes in the list of the nodes that are referred to in Links.
     allNodes_dicts = [{'index':a.id, 'name':a.name} for a in sorted(allNodes,key=lambda x: x.id)]
     def calcLinkIndices(ll):
         fromInd = [z['index'] for z in allNodes_dicts].index(ll.pointA_id)
@@ -80,16 +81,106 @@ def addLink(request):
             response['status'] = 'success'
         return HttpResponse(json.dumps(response), mimetype='application/json')
     else:
-        raise NotImplementedError("Must use an ajax call for this.")
+        raise NotImplementedError("Must use a POST call for this.")
 
 
 def removeLink(request):
-    pass
+    """
+
+    """
+    response = {}
+    if request.method=="POST":
+        try:
+            l_from = request.POST['from']
+            l_to = request.POST['to']
+            fromNode = ContentNode.objects.get(name=l_from)
+            toNode = ContentNode.objects.get(name=l_to)
+            oneWay = Q(pointA=fromNode) & Q(pointB=toNode)
+            otherWay = Q(pointA=toNode) & Q(pointB=fromNode)
+            links = Link.objects.filter( oneWay | otherWay )
+            links.delete()
+        except Exception, e:
+            response['status']='failed'
+            response['error']=str(e)
+            response['traceback']=traceback.format_exc()
+        else:
+            response['status']='success'
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here.")
+            
+
+def fixNodePos(request):
+    """
+    Let's do a batch thing here to minimize the number of ajax calls we have to make.
+    request.POST must contain a list of json decipherable dict things, that contain the
+    unique name of a node, and also contain a string describing the "transform(...)"
+    coordinate position where we'd like it to be.
+    We'll create a gtd position node to store the transform coords, using the unique node
+    name and appending some sort of reference as to what type of position it is, or what it's for.
+    This name will be guaranteed unique. Then we'll link it to the original node with a linkType
+    that's especially for positions. Sound flexible enough?
+    """
+    response = {}
+    if request.method=="POST":
+        try:
+            nodeList = request.POST['nodeList']
+            posNodeType = request.POST['posNodeType']
+            posLinkType = request.POST['posLinkType']
+            handleFixPos(nodeList, posNodeType, posLinkType)
+        except Exception,e:
+            response['status']='failed'
+            response['error']=str(e)
+            response['traceback']=traceback.format_exc()
+        else:
+            response['status']='success'
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here")
+
+def handleFixPos(nodeList, pNode_t, pLink_t):
+    for item in nodeList:
+        nn = ContentNode.objects.get(name=item['nodeName'])
+        node_t = NodeType.objects.get(name=pNode_t)
+        link_t = LinkType.objects.get(name=pLink_t)
+        posStr = item['posStr']
+        posNode = ContentNode(name=nn.name+"_"+pNode_t, nodeType=node_t, content=posStr)
+        posNode.save()
+        posLink = Link(linkType=link_t, pointA=nn, pointB=posNode, direct="b")
+        posLink.save()
+        
+
+def resetAllNodePos(request):
+    """
+    This is as simple as deleting each positioned node's position node, and deleting the
+    link that used to attach it to that node. On the javascript side some separate thing
+    will have to be done to trigger an unpositioning without a page refresh, but perhaps
+    a page refresh here wouldn't actually be the worst idea.
+    posLinkType in the POST data specifies which links to delete, and nodeLinkType in the
+    POST data specifies which 
+    """
+    response = {}
+    if request.method=="POST":
+        try:
+            posLinkType = request.POST['posLinkType']
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            raise NotImplementedError("Must use a POST call here")
+
 
 def addNode(request):
+    """
+
+    """
     pass
 
 def removeNode(request):
+    """
+
+    """
     pass
     
 def setNodeType(request):
