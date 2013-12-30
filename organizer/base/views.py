@@ -45,12 +45,43 @@ def getGraph(request):
     # We sort the list of nodes so the positions correspond to the db ids. We can then use the ids that the links store,
     # and these will refer to the positions in the list that d3 wants to see.
     allNodes_dicts = [{'index':a.id, 'name':a.name} for a in sorted(allNodes,key=lambda x: x.id)]
-    allLinks_dicts = [{'source':a.pointA_id, 'target':a.pointB_id} for a in allLinks]
+    def calcLinkIndices(ll):
+        fromInd = [z['index'] for z in allNodes_dicts].index(ll.pointA_id)
+        toInd = [z['index'] for z in allNodes_dicts].index(ll.pointB_id)
+        return {'source':fromInd, 'target':toInd}
+    
+    allLinks_dicts = [calcLinkIndices(a) for a in allLinks]
     retDict = {'nodes':allNodes_dicts, 'links':allLinks_dicts}
     return HttpResponse(json.dumps(retDict), mimetype='application/json')
 
 def addLink(request):
-    pass
+    """
+
+    """
+    response = {}
+    if request.method=="POST":
+        try:
+            l_from = request.POST['from']
+            l_to = request.POST['to']
+            l_type = request.POST['type']
+            linkType = LinkType.objects.get(name=l_type)
+            fromNode = ContentNode.objects.get(name=l_from)
+            toNode = ContentNode.objects.get(name=l_to)
+            linky = Link(linkType=linkType,
+                         pointA=fromNode,
+                         pointB=toNode,
+                         direct="b")
+            linky.save()
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            response['status'] = 'success'
+        return HttpResponse(json.dumps(response), mimetype='application/json')
+    else:
+        raise NotImplementedError("Must use an ajax call for this.")
+
 
 def removeLink(request):
     pass
@@ -91,4 +122,6 @@ def showMain(request):
     
     
 def showD3_graph_test(request):
-    return render_to_response('d3Graph.html', {}, context_instance=RequestContext(request))
+    nodeTypes = NodeType.objects.all()
+    linkTypes = LinkType.objects.all()
+    return render_to_response('d3Graph.html', {'nodeTypes':nodeTypes, 'linkTypes':linkTypes}, context_instance=RequestContext(request))

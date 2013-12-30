@@ -4,11 +4,53 @@
 
  {% block scripts %}
  <link rel="stylesheet" type="text/css" href="{% static 'd3GraphCSS.css' %}"/>
+ <script src="{% static 'spin.min.js' %}"></script>
  {% endblock scripts %}
+
+ {% block controls %}
+
+ <select id="linkTypeSelector">
+ {% for linkType in linkTypes %}
+ <option value="{{linkType.name}}">{{linkType.name}}</option>
+ {% endfor %}
+ </select>
+
+ <select id="nodeTypeSelector">
+ {% for nodeType in nodeTypes %}
+ <option value="{{nodeType.name}}">{{nodeType.name}}</option>
+ {% endfor %}
+ </select>
+
+ <div id="spinner-box"></div>
+
+ {% endblock controls %}
+
 
  {% block d3Script %}
  <script src="http://d3js.org/d3.v3.min.js"></script>
+ <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
  <script>
+
+ var spinOpts = {
+     lines: 8,
+     length: 10,
+     width: 5,
+     radius: 5,
+     corners: 0.5,
+     rotate: 0,
+     direction: 1,
+     color: '#000',
+     speed: 1,
+     trail: 40,
+     shadow: false,
+     hwaccel: false,
+     className: 'spinner',
+     zIndex: 2e9,
+     top: 'auto',
+     left: 'auto'
+ };
+ var spinner = new Spinner(spinOpts);
+ var spinnerTarget = document.getElementById('spinner-box');
 
  var width = 1020;
  var height = 800;
@@ -126,6 +168,9 @@ d3.select("body")
 	if(kcode==76){ // This is 'l'
 	    flashText("adding Link");
 	    addLink();
+        }else if(kcode==82){ // This is 'r' for 'removeLink'
+            flashText("removing Link");
+            removeLink();
 	}else if(kcode==65){ // This is 'a' for 'add'
 	    flashText("adding Node");
 	    addNode();
@@ -144,14 +189,90 @@ function flashText(txt){
 	.style("fill-opacity",".1")
 	.remove();
 }
-
 function addLink(){
     var clickIndex = currentObjectClick.__data__.index;
+    var clickName = currentObjectClick.__data__.name;
     var mouseIndex = currentObjectMouse.__data__.index;
+    var mouseName = currentObjectMouse.__data__.name;
+    var linkType = $('#linkTypeSelector')[0].options[$('#linkTypeSelector')[0].selectedIndex].value;
+    addLinkToDB(clickName, mouseName, linkType);
     var oldLinks = force.links();
     var newLinks = oldLinks.push({"source":clickIndex, "target":mouseIndex});
     start();
 }
+function removeLink(){
+    var clickIndex = currentObjectClick.__data__.index;
+    var clickName = currentObjectClick.__data__.name;
+    var mouseIndex = currentObjectMouse.__data__.index;
+    var mouseName = currentObjectMouse.__data__.name;
+    removeLinkFromDB(clickName, mouseName);
+    var currentLinks = force.links();
+    function compare(link1, link2){
+        var l1s = link1.source.name;
+        var l1t = link1.target.name;
+        var l2s = link2.source;
+        var l2t = link2.target;
+        if((l1s === l2s) || (l1s === l2t)) {
+            if((l1t === l2t) || (l1t == l2s)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    function remove(arr, item){
+        for(var i=arr.length; i--;){
+            if(compare(arr[i], item)){
+                arr.splice(i,1);
+            }
+        }
+    }
+    remove(currentLinks, {"source":clickName, "target":mouseName});
+    start();
+}
+
+function addLinkToDB(aN, bN, lType){
+    $.ajax({
+        beforeSend: function(){
+            spinner.spin(spinnerTarget);
+        },
+        complete: function(){
+            spinner.stop();
+        },
+        type: 'POST',
+        url: 'http://localhost/organizer/addLink/',
+        data: {'from':aN, 'to':bN, 'type':lType, 'csrfmiddlewaretoken':'{{csrf_token}}'}, // data
+        success: function(data, txtStatus, jqXHR){
+            globoData = data;
+            globoTxtStatus = txtStatus;
+            globoXHR = jqXHR;
+            console.log(" "+data)
+            console.log(" "+txtStatus)
+            console.log(" "+jqXHR)
+        },
+        error: function(e1,e2,e3){
+            alert("Add Link Ajax Failed: "+e1+" \n"+e2+" \n"+e3);
+        }
+    });
+}
+ 
+function removeLinkFromDB(aN, bN){
+    $.ajax({
+        beforeSend: function(){
+            spinner.spin(spinnerTarget);
+        },
+        complete: function(){
+            spinner.stop();
+        },
+        type: 'POST',
+        url: 'http://localhost/organizer/removeLink/',
+        data: {'from':aN, 'to':bN, 'csrfmiddlewaretoken':'{{csrf_token}}'},
+        success: function(data, txtStatus, jqXHR){
+        },
+        error: function(e1,e2,e3){
+        }
+    });    
+}
+
 
 function addNode(){
     alert("addNode not yet implemented");

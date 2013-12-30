@@ -40,6 +40,14 @@ class ContentNode(models.Model):
         dStr = json.dumps(self.getDict())
         return(dStr)
 
+    def getDiv(self):
+        ret = self.nodeType.name
+        if len(self.content) > 45:
+            ret += (": " + self.name + ": " + self.content[0:45] + " ...")
+        else:
+            ret += (": " + self.name + ": " + self.content[0:45])
+        return(ret)
+
     def __unicode__(self):
         return u'%s: %s' % (self.name, str(self.nodeType))
 
@@ -78,6 +86,10 @@ class Link(models.Model):
     def getJson(self):
         dStr = json.dumps(self.getDict())
         return(dStr)
+    
+    def getDiv(self):
+        ret = self.linkType.name +": "+self.pointA.name + " -> " + self.pointB.name
+        return(ret)
 
     def __unicode__(self):
         return u'%s: %s -- %s, %s' % (str(self.linkType),
