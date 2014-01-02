@@ -10,8 +10,9 @@
     stroke-width: 3px;
 }
 
-.node.fixed {
-    fill: #f00;
+.node.fixed circle {
+    fill: #EB1818;
+    stroke: #000;
 }
 
 .node text {

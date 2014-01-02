@@ -8,6 +8,8 @@
 
 import json
 from django.db import models
+from django.template import Template
+from django.template import Context
 
 # Create your models here.
 
@@ -50,6 +52,29 @@ class ContentNode(models.Model):
 
     def __unicode__(self):
         return u'%s: %s' % (self.name, str(self.nodeType))
+
+
+def render(node, templateContent):
+    t = Template(template.content)
+    contextObj = json.loads(node.content)
+    contextObj.update({'node':node})
+    c = Context(contextObj)
+    return(t.render(c))
+
+def renderEdit(node_id):
+    theNode = ContentNode.objects.get(id=node_id)
+    extraStuff = ContentNode.objects.raw("""SELECT cn.id,
+                                             cn.nodetype_id,
+                                             cn.content,
+                                             cnn.id,
+                                             cnn.content AS templateContent
+                                             FROM base_contentnode cn
+                                             LEFT JOIN base_link ll ON cn.id=ll.pointA_id
+                                                   AND ll.linktype_id IN (SELECT id from base_linktype WHERE name="gtd_edit_template")
+                                             LEFT JOIN base_contentnode cnn ON ll.pointB_id=ccn.id
+                                             WHERE cn.id = %s
+                                   ;""", [node_id])
+    return(render(theNode, extraStuff.templateContent))
 
 
 

@@ -13,6 +13,7 @@ from base.models import ContentNode, NodeType
 from base.models import Link, LinkType
 from django.db.models import Q
 import json
+import traceback
 
 
 # Create your views here.
@@ -36,10 +37,70 @@ def getGraphFrom_json(nodeID, linkTypeID=None):
     pass
 
 def getGraph(request):
+    wahoo = ContentNode.objects.raw("""SELECT cn.id, 
+                                              cn.name, 
+                                              cn.nodeType_id, 
+                                              cn.content, 
+                                              ccn.content AS linkcontent,
+                                              lt.name AS linktype,
+                                              nt.name AS nodetype
+                                              FROM base_contentnode cn 
+                                              LEFT JOIN base_link ll ON cn.id=ll.pointA_id
+                                              AND ll.linktype_id IN (SELECT id from base_linktype WHERE name="gtd_position")
+                                              LEFT JOIN base_contentnode ccn ON ll.pointB_id=ccn.id
+                                              LEFT JOIN base_linktype lt ON ll.linkType_id=lt.id
+                                              LEFT JOIN base_nodetype nt ON cn.nodeType_id=nt.id
+                                            
+                                              ORDER BY cn.id;""")
+
+    def getjson(x):
+        try:
+            if x.linktype=="gtd_position":
+                return(json.loads(x.linkcontent))
+            else:
+                return None
+        except Exception,e:
+            raise
+    wahoo2 = [(a, getjson(a)) for a in wahoo]
+
+    def makeJSONstr(tt):
+        if tt[1]==None:
+            return({'index':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype})
+        elif tt[1]['fixed'] == False:
+            return({'index':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y']})
+        elif tt[1]['fixed'] == True:
+            return({'index':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y'], 'fixed':1})
+        else:
+            raise RuntimeError("What am I doing here")
+    def filterNodes(nn):
+        if nn[0].nodetype != "gtd_position":
+            return(True)
+        else:
+            return(False)
+    
+    allLinks = [a for a in Link.objects.exclude(linkType__name='gtd_position')]
+    allNodes_dicts = [makeJSONstr(a) for a in wahoo2 if filterNodes(a)==True]
+    def calcLinkIndices(ll):
+        fromInd = [z['index'] for z in allNodes_dicts].index(ll.pointA_id)
+        toInd = [z['index'] for z in allNodes_dicts].index(ll.pointB_id)
+        return {'source':fromInd, 'target':toInd}
+    
+    allLinks_dicts = [calcLinkIndices(a) for a in allLinks]
+    retDict = {'nodes':allNodes_dicts, 'links':allLinks_dicts}
+    return HttpResponse(json.dumps(retDict), mimetype='application/json')
+
+
+
+def getGraph_old(request):
     # Let's just get the graphs nodes, figure out what the indices in the list should be (?), then consult the links
     # and populate a link structure using the indices. The node array and link array must minimally conform to the
     # specifications for a d3 force directed layout.
     # ::TODO:: figure out how the position in the node list affects the layout. Is the first node always the root (eg?)
+
+    # Raw query that lets us get positions and other things from linked nodes.
+    
+
+
     allNodes = [a for a in ContentNode.objects.all()]
     allLinks = [a for a in Link.objects.all()]
 
@@ -108,9 +169,29 @@ def removeLink(request):
         return HttpResponse(json.dumps(response), mimetype="application/json")
     else:
         raise NotImplementedError("Must use a POST call here.")
+        
+def logDecor(fPath):
+    def decorator(f):
+        def inner(*args, **kwargs):
+            with open(fPath, 'w') as logF:
+                def innerLog(msg):
+                    logF.write(" --- "+msg+"\n")
+                    logF.flush()
+                kwargs.update({'logger':innerLog})
+                logF.write("Calling:  "+str(f)+"\n")
+                logF.flush()
+                try:
+                    return(f(*args, **kwargs))
+                except Exception,e:
+                    logF.write("Exception from decorator:"+str(e)+"\n")
+                    logF.flush()
+                    raise
+        return inner
+    return decorator
             
-
-def fixNodePos(request):
+            
+@logDecor("/tmp/fixNodePos.log")
+def fixNodePos(request, **kwargs):
     """
     Let's do a batch thing here to minimize the number of ajax calls we have to make.
     request.POST must contain a list of json decipherable dict things, that contain the
@@ -122,35 +203,50 @@ def fixNodePos(request):
     that's especially for positions. Sound flexible enough?
     """
     response = {}
-    if request.method=="POST":
-        try:
-            nodeList = request.POST['nodeList']
-            posNodeType = request.POST['posNodeType']
-            posLinkType = request.POST['posLinkType']
-            handleFixPos(nodeList, posNodeType, posLinkType)
-        except Exception,e:
-            response['status']='failed'
-            response['error']=str(e)
-            response['traceback']=traceback.format_exc()
-        else:
-            response['status']='success'
-        return HttpResponse(json.dumps(response), mimetype="application/json")
-    else:
-        raise NotImplementedError("Must use a POST call here")
+    try:
+        if request.method=="POST":
+            try:
+                nodeList = json.loads(request.POST['nodeList'])
+                posNodeType = request.POST['posNodeType']
+                posLinkType = request.POST['posLinkType']
+                handleFixPos(nodeList, posNodeType, posLinkType)
+            except:
+                kwargs['logger']("3. "+json.dumps(response))
+                response['status']='failed'
+                response['error']='whoah' #str(e)
+                response['traceback']=traceback.format_exc()
+            else:
+                response['status']='success'
 
-def handleFixPos(nodeList, pNode_t, pLink_t):
+            return HttpResponse(json.dumps(response), mimetype="application/json")
+        else:
+            kwargs['logger']("What the. "+json.dumps(response))
+            raise NotImplementedError("Must use a POST call here")
+    except Exception,e:
+        kwargs['logger']("whyyyyy")
+        raise
+@logDecor("/tmp/handleFixPos.log")
+def handleFixPos(nodeList, pNode_t, pLink_t, **kwargs):
+    kwargs['logger']("NodeList: "+str(nodeList))
     for item in nodeList:
         nn = ContentNode.objects.get(name=item['nodeName'])
         node_t = NodeType.objects.get(name=pNode_t)
         link_t = LinkType.objects.get(name=pLink_t)
-        posStr = item['posStr']
-        posNode = ContentNode(name=nn.name+"_"+pNode_t, nodeType=node_t, content=posStr)
+        posStrX = item['x']
+        posStrY = item['y']
+        fixedNess = item['fixed']
+        # Get_or_create returns a tuple below. I ALWAYS forget this.
+        posNode = ContentNode.objects.get_or_create(name=nn.name+"_"+pNode_t, nodeType=node_t)[0] 
+        posNode.content=json.dumps({'fixed':fixedNess,
+                                    'x':posStrX,
+                                    'y':posStrY})
         posNode.save()
-        posLink = Link(linkType=link_t, pointA=nn, pointB=posNode, direct="b")
+        posLink = Link.objects.get_or_create(linkType=link_t, pointA=nn, pointB=posNode, direct="b")[0]
         posLink.save()
         
 
-def resetAllNodePos(request):
+@logDecor("/tmp/resetAllNodePos.log")
+def resetAllNodePos(request, **kwargs):
     """
     This is as simple as deleting each positioned node's position node, and deleting the
     link that used to attach it to that node. On the javascript side some separate thing
@@ -159,16 +255,32 @@ def resetAllNodePos(request):
     posLinkType in the POST data specifies which links to delete, and nodeLinkType in the
     POST data specifies which 
     """
+    kwargs['logger']("At very beginning.")
     response = {}
     if request.method=="POST":
         try:
             posLinkType = request.POST['posLinkType']
+            posNodeType = request.POST['posNodeType']
+            lt = LinkType.objects.get(name=posLinkType)
+            nt = NodeType.objects.get(name=posNodeType)
+            ContentNode.objects.filter(nodeType=nt).delete()
+            Link.objects.filter(linkType=lt).delete()
+            kwargs['logger']("Finished trying to delete things...")
+
         except Exception,e:
+            kwargs['logger']("in exception clause...")
             response['status'] = 'failed'
             response['error'] = str(e)
             response['traceback'] = traceback.format_exc()
         else:
-            raise NotImplementedError("Must use a POST call here")
+            kwargs['logger']("in else clause...")
+            response['status'] = 'success'
+
+        kwargs['logger']("out of else clause...")
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+        kwargs['logger']("huh??...")
+    else:
+        raise NotImplementedError("Must use a POST call here")
 
 
 def addNode(request):

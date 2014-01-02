@@ -68,11 +68,13 @@ var force = d3.layout.force()
 var drag = force.drag()
     .on("dragstart", dragstart);
 
+
+zooom = d3.behavior.zoom().scaleExtent([-5,8]).on("zoom", zoom)
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height)
     .append("g")
-    .call(d3.behavior.zoom().scaleExtent([1,8]).on("zoom", zoom))
+    .call(zooom)
     .append("g");
 
 svg.append("rect")
@@ -116,7 +118,7 @@ function start() {
     link.enter().append("line").attr("class","link");
     link.exit().remove();
     node = node.data(force.nodes());
-    thing = node.enter().append("g").attr("class","node").call(drag);
+    thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
     thing.append("circle")
 	.attr("r", 12);
     thing.append("text")
@@ -161,8 +163,39 @@ function dragstart(d){
     d3.event.sourceEvent.stopPropagation();
 }
 
+globalScale = null;
+globalTranslate = null;
 function zoom(){
-    svg.attr("transform", "translate("+d3.event.translate+")scale("+d3.event.scale+")");
+    console.log(d3.event);
+    if(d3.event===null){
+	var trans = zooom.translate();
+	var scale = zooom.scale();
+	svg.attr("transform", "translate("+trans+")scale("+scale+")");
+	globalScale = scale;
+	globalTranslate = trans;
+	
+    }
+    else if(d3.event.sourceEvent.shiftKey==true){
+	if(d3.event.sourceEvent.wheelDelta > 0){
+	    // one thing
+	    var gravity = force.gravity();
+	    force.gravity( gravity * 1.05 );
+	}else{
+	    // other thing
+	    var gravity = force.gravity();
+	    force.gravity( gravity * 0.95 );
+	}
+	start();
+	if(globalScale != null && globalTranslate != null){
+	    zooom.scale(globalScale);
+	    zooom.translate(globalTranslate);
+	}
+	d3.event.sourceEvent.stopPropagation();
+    } else {
+	svg.attr("transform", "translate("+d3.event.translate+")scale("+d3.event.scale+")");
+	globalScale = d3.event.scale;
+	globalTranslate = d3.event.translate;
+    }
 }
 
 // Handling the key events.
@@ -182,6 +215,11 @@ d3.select("body")
 	}else if(kcode==69){ // This is 'e' for 'edit'
 	    flashText("editing Node");
 	    editNode();
+	}else if(kcode==85){ // This is 'u' for 'unfix'
+	    flashText("unfixing node");
+	    unfixNode();
+	}else{
+	    flashText(""+kcode);
 	}
     });
 function flashText(txt){
@@ -194,6 +232,14 @@ function flashText(txt){
 	.style("fill-opacity",".1")
 	.remove();
 }
+
+function unfixNode(){
+    var mouseyNode = d3.select(currentObjectMouse);
+    mouseyNode.classed("fixed", false);
+    mouseyNode.data()[0].fixed=0;
+    start();
+}
+
 function addLink(){
     var clickIndex = currentObjectClick.__data__.index;
     var clickName = currentObjectClick.__data__.name;
@@ -265,41 +311,81 @@ function addLinkToDB(aN, bN, lType, addLinkCallback){
         }
     });
 }
- 
-function removeLinkFromDB(aN, bN, removeLinkCallback){
-    $.ajax({
-        beforeSend: function(){
-            spinner.spin(spinnerTarget);
-        },
-        complete: function(){
-            spinner.stop();
-        },
-        type: 'POST',
-        url: 'http://localhost/organizer/removeLink/',
-        data: {'from':aN, 'to':bN, 'csrfmiddlewaretoken':'{{csrf_token}}'},
-        success: function(data, txtStatus, jqXHR){
-            if(data['status']==="success"){
-                removeLinkCallback();
-            }else{
-                alert("Error Occurring on server. Check js console.");
-                console.log(" "+data)
-                console.log(" "+txtStatus)
-                console.log(" "+jqXHR)
-            }
 
-        },
-        error: function(e1,e2,e3){
-            alert("Remove Link Ajax Failed: "+e1+" \n"+e2+" \n"+e3);
-        }
-    });    
+function doAjax(datas, url, successFunk){
+    // successFunk must be sf(retData, txtStatus, jqXHR){...}
+    var datas_mod = datas
+    datas_mod['csrfmiddlewaretoken'] = '{{csrf_token}}';
+    $.ajax({
+	beforeSend: function(){
+	    spinner.spin(spinnerTarget);
+	},
+	complete: function(){
+	    spinner.stop();
+	},
+	type:'POST',
+	url: url,
+	data: datas_mod,
+	success: successFunk,
+	error: function(e1,e2,e3){
+	    alert("Ajax Failed: "+e1+" \n"+e2+" \n"+e3);
+	    globalE1 = e1;
+	    globalE2 = e2;
+	    globalE3 = e3;
+	}
+    });
+}
+
+ 
+function removeLinkFromDB(aN, bN, removeLinkCallback){ 
+    doAjax({'from':aN, 'to':bN}, 
+	   "http://localhost/organizer/removeLink/",
+	   function(data, txtStatus, jqXHR){
+	       if(data['status']==="success"){
+		   removeLinkCallback();
+	       }else{
+		   alert("Error in removeLinkFromDB. Use js console.");
+	       }
+	   });
 }
 
 function storeNodePos(){
-    alert("called storeNodePos");
+
+ 
+    function addNode(n){
+	izFixed = d3.select(n).property('fixed')===1;
+	var x = {'nodeName':n.name,'x':n.x, 'y':n.y, 'fixed':izFixed};
+	console.log(n);
+	return(x);
+    }
+    
+    doAjax({'nodeList':JSON.stringify(node.data().map(function(d){return(addNode(d));})),
+	    'posNodeType':'gtd_position',
+	    'posLinkType':'gtd_position'}, 
+	   "http://localhost/organizer/fixNodePos/",
+	   function(data, txtStatus, jqXHR){
+	       if(data['status']==='success'){
+		   //storeNodeCallback();
+	       }else{
+		   alert("Error in storeNodePos. Use js console.");
+		   blah = data;
+	       }
+	   });
+    //alert("called storeNodePos");
 }
 
 function resetNodePos(){
-    alert("called resetNodePos");
+
+    doAjax({'posNodeType':'gtd_position', 'posLinkType':'gtd_position'},
+	   "http://localhost/organizer/resetAllNodePos/",
+	   function(d, t, j){
+	       if(d['status']==='success'){
+		   //resetNodeCallback();
+	       }else{
+		   alert("Error in resetNodePos. Use js console.");
+	       }
+	   });
+    //alert("called resetNodePos");
 }
 
 function addNode(){
