@@ -11,6 +11,7 @@ from django.shortcuts import render, render_to_response
 from django.template import RequestContext, loader
 from base.models import ContentNode, NodeType
 from base.models import Link, LinkType
+from base.models import renderEdit, renderAdd, renderView
 from django.db.models import Q
 import json
 import traceback
@@ -65,11 +66,11 @@ def getGraph(request):
 
     def makeJSONstr(tt):
         if tt[1]==None:
-            return({'index':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype})
+            return({'index':tt[0].id, 'origIndex':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype})
         elif tt[1]['fixed'] == False:
-            return({'index':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y']})
+            return({'index':tt[0].id, 'origIndex':tt[0].id,'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y']})
         elif tt[1]['fixed'] == True:
-            return({'index':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y'], 'fixed':1})
+            return({'index':tt[0].id, 'origIndex':tt[0].id,'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y'], 'fixed':1})
         else:
             raise RuntimeError("What am I doing here")
     def filterNodes(nn):
@@ -282,12 +283,76 @@ def resetAllNodePos(request, **kwargs):
     else:
         raise NotImplementedError("Must use a POST call here")
 
+@logDecor("/tmp/getNodeEditDiv.log")
+def getNodeEditDiv(request, **kwargs):
+    response = {}
+    if request.method=="POST":
+        try:
+            nodeName = request.POST['nodeName']
+            divHTML = renderEdit(nodeName)
+            response['divHtml'] = divHTML
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            response['status'] = 'success'
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here")
+
+def saveNode(request, **kwargs):
+    response = {}
+    if request.method=="POST":
+        try:
+            nodeName = request.POST['nodeName']
+            nodeTypeName = request.POST['nodeTypeName']
+            nodeContent = request.POST['nodeContent']
+            cn_pre = ContentNode.objects.get_or_create(name=nodeName)
+            cn = cn_pre[0]
+            cn_created = cn_pre[1]
+            nt = NodeType.objects.get(name=nodeTypeName)
+            cn.nodeType = nt
+            cn.content = nodeContent
+            cn.save()
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            response['status'] = 'success'
+            response['msg'] = 'created: '+str(cn_created)
+            response['nodeContent'] = nodeContent
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here")
 
 def addNode(request):
     """
 
     """
-    pass
+    response = {}
+    if request.method=="POST":
+        try:
+            nodeName = request.POST['nodeName']
+            nodeTypeName = request.POST['nodeTypeName']
+            nt = NodeType.objects.get(name=nodeTypeName)
+            nodeContent = request.POST['nodeContent']
+            newNode = ContentNode(name=nodeName, nodeType=nt, content=nodeContent)
+            newNode.save()
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            response['status'] = 'success'
+            response['dbIndex'] = newNode.id
+            response['dbName'] = newNode.name
+            response['dbTypeName'] = newNode.nodeType.name
+
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here")
 
 def removeNode(request):
     """

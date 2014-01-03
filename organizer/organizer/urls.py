@@ -18,4 +18,6 @@ urlpatterns = patterns('',
     url(r'^removeNode/','base.views.removeNode', name='removeNode'),
     url(r'^fixNodePos/','base.views.fixNodePos', name='fixNodePos'),
     url(r'^resetAllNodePos/','base.views.resetAllNodePos', name='resetAllNodePos'),
+    url(r'^getNodeEditDiv/','base.views.getNodeEditDiv', name='getNodeEditDiv'),
+    url(r'^saveNode/','base.views.saveNode', name='saveNode'),
 )

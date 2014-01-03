@@ -70,7 +70,8 @@ var drag = force.drag()
 
 
 zooom = d3.behavior.zoom().scaleExtent([-5,8]).on("zoom", zoom)
-var svg = d3.select("body").append("svg")
+var svg = d3.select("body").append("div").attr("id","kbdEventContainer").attr("tabIndex","1")
+    .append("svg")
     .attr("width", width)
     .attr("height", height)
     .append("g")
@@ -81,6 +82,18 @@ svg.append("rect")
     .attr("class","overlay")
     .attr("width",width)
     .attr("height",height);
+
+svg.append("marker")
+    .attr("id", "triangle")
+    .attr("viewBox","0 0 10 10")
+    .attr("refX","0")
+    .attr("refY","5")
+    .attr("markerUnits", "strokeWidth")
+    .attr("markerWidth", "20")
+    .attr("markerHeight", "15")
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M 0 0 L 10 5 L 0 10 z")
 
 
 var linkVis = svg.append("svg:g");
@@ -115,7 +128,7 @@ d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
 //          nodes just kept getting stacked on there.
 function start() {
     link = link.data(force.links());
-    link.enter().append("line").attr("class","link");
+    link.enter().append("line").attr("class","link").attr("marker-mid", "url(#triangle)");
     link.exit().remove();
     node = node.data(force.nodes());
     thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
@@ -200,7 +213,7 @@ function zoom(){
 
 // Handling the key events.
 // This might be a bit rough for a while as I learn how to do this.
-d3.select("body")
+d3.select("#kbdEventContainer")
     .on("keydown", function(){
 	var kcode = d3.event.keyCode;
 	if(kcode==76){ // This is 'l'
@@ -389,12 +402,66 @@ function resetNodePos(){
 }
 
 function addNode(){
-    alert("addNode not yet implemented");
+    var newNodeName = prompt("Enter node name:")
+    var newNodeTypeName = $('#nodeTypeSelector')[0].selectedOptions[0].text;
+    function addCallback(dbIndex, dbName, dbTypeName){
+	var theNodes = force.nodes();
+	theNodes.push({'origIndex':dbIndex, 'name':dbName, 'type':dbTypeName});
+	start();
+    }
+    doAjax({'nodeName':newNodeName, 'nodeTypeName':newNodeTypeName, 'nodeContent':''},
+	   "http://localhost/organizer/addNode/",
+	   function(d,t,j){
+	       if(d['status']==='success'){
+		   addCallback(d['dbIndex'], d['dbName'], d['dbTypeName']);
+	       }else{
+		   alert("Error in addNode. Use js console.");
+		   global_d = d;
+		   global_t = t;
+		   global_j = j;
+	       }
+
+	   });
 }
 
 function editNode(){
-    alert("editNode not yet implemented");
+    var nodeName = d3.select(currentObjectMouse).data()[0].name;
+    doAjax({'nodeName':nodeName},
+	   "http://localhost/organizer/getNodeEditDiv/",
+	   function(d,t,j){
+	       if(d['status']==='success'){
+		   d3.select("#editArea").html(d['divHtml']);
+	       }else{
+		   alert("Error in getNodeEditDiv. Use js console.")
+		   global_d = d;
+		   global_t = t;
+		   global_j = j;
+	       }
+	   });
+    //alert("editNode not yet implemented");
+}
+
+function saveNode(nodeEditDivID){
+    var content = $('#'+nodeEditDivID+" .nodeContent").val();
+    var nodeName = $('#'+nodeEditDivID+" .nodeName").text();
+    var nodeTypeName = $('#'+nodeEditDivID+" .nodeType")[0].selectedOptions[0].text;
+    doAjax({'nodeName':nodeName, 'nodeContent':content, 'nodeTypeName':nodeTypeName},
+     "http://localhost/organizer/saveNode/",
+	   function(d,t,j){
+	       if(d['status']==='success'){
+		   flashText('saved Node'+d['msg'])
+	       }else{
+		   alert("Error in saveNode. Use js console.");
+		   global_d = d;
+		   global_t = t;
+		   global_j = j;
+	       }
+	   });
 }
 
 </script>
 {% endblock d3Script %}
+
+{% block editArea %}
+<div id="editArea" tabindex="1"></div>
+{% endblock editArea %}

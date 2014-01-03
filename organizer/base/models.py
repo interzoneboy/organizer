@@ -54,28 +54,59 @@ class ContentNode(models.Model):
         return u'%s: %s' % (self.name, str(self.nodeType))
 
 
-def render(node, templateContent):
-    t = Template(template.content)
-    contextObj = json.loads(node.content)
+def renderHelper(node, templateContent):
+    t = Template(templateContent)
+    try:
+        contextObj = json.loads(node.content)
+    except ValueError,e:
+        contextObj = {}
     contextObj.update({'node':node})
+    nodeTypeNames = NodeType.objects.all().values_list('name',flat=True)
+    contextObj.update({'nodeTypes':nodeTypeNames, 'selectedName':node.nodeType.name})
     c = Context(contextObj)
     return(t.render(c))
 
-def renderEdit(node_id):
-    theNode = ContentNode.objects.get(id=node_id)
-    extraStuff = ContentNode.objects.raw("""SELECT cn.id,
-                                             cn.nodetype_id,
-                                             cn.content,
-                                             cnn.id,
-                                             cnn.content AS templateContent
-                                             FROM base_contentnode cn
-                                             LEFT JOIN base_link ll ON cn.id=ll.pointA_id
-                                                   AND ll.linktype_id IN (SELECT id from base_linktype WHERE name="gtd_edit_template")
-                                             LEFT JOIN base_contentnode cnn ON ll.pointB_id=ccn.id
-                                             WHERE cn.id = %s
-                                   ;""", [node_id])
-    return(render(theNode, extraStuff.templateContent))
+class NoTemplateException(Exception):
+    pass
 
+def render(node_name, followLink="gtd_type", templateLink="gtd_edit_template"):
+    theNode = ContentNode.objects.get(name=node_name)
+    def findTemplate(theNode):
+        origNodes = []
+        stack = [theNode]
+        while len(stack) > 0:
+            item = stack[0]
+            print(item)
+            if (len(origNodes) > 0) and (item in origNodes): # We've come around in a circle.
+                raise NoTemplateException()
+
+            origNodes.append(item)
+
+            if templateLink in item.aLinks.all().values_list('linkType__name',flat=True):
+                # do something nice
+                templateNode = item.aLinks.filter(linkType__name=templateLink)[0].pointB
+                return templateNode
+            else:
+                # get my gtd_child parent nodes
+                parentNodes = [a.pointA for a in item.bLinks.all() if a.linkType.name==followLink]
+                stack = stack[1:] + parentNodes
+
+        raise NoTemplateException()
+
+    try:
+        extraStuff = findTemplate(theNode)
+        return(renderHelper(theNode, extraStuff.content))
+    except NoTemplateException,e:
+        return("<div>NO TEMPLATE AVAILABLE</div>")
+
+def renderEdit(node_name):
+    return render(node_name, "gtd_child", "gtd_edit_template")
+
+def renderAdd(node_name):
+    return render(node_name, "gtd_child", "gtd_add_template")
+
+def renderView(node_name):
+    return render(node_name, "gtd_child", "gtd_view_template")
 
 
 class LinkType(models.Model):
