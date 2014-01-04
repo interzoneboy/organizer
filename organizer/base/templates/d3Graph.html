@@ -230,7 +230,11 @@ d3.select("#kbdEventContainer")
 	    addNode();
 	}else if(kcode==69){ // This is 'e' for 'edit'
 	    flashText("editing Node");
-	    editNode();
+	    if(d3.event.shiftKey==true){
+		editNode(true);
+	    }else{
+		editNode(false);
+	    }
 	}else if(kcode==85){ // This is 'u' for 'unfix'
 	    flashText("unfixing node");
 	    unfixNode();
@@ -239,6 +243,7 @@ d3.select("#kbdEventContainer")
 	    deleteNode();
 	}else{
 	    flashText(""+kcode);
+	    wtf = d3.event;
 	}
     });
 function flashText(txt){
@@ -508,13 +513,17 @@ function deleteNode(){
 	     });	      
 }
 
-function editNode(){
+function editNode(multiple){
     var nodeName = d3.select(currentObjectMouse).data()[0].name;
     doAjax({'nodeName':nodeName},
 	   "http://localhost/organizer/getNodeEditDiv/",
 	   function(d,t,j){
 	       if(d['status']==='success'){
-		   d3.select("#editArea").html(d['divHtml']);
+		   if(multiple==true){
+		       d3.select("#editArea").append("div").html(d['divHtml']);
+		   }else{
+		       d3.select("#editArea").html(d['divHtml']);
+		   }
 	       }else{
 		   alert("Error in getNodeEditDiv. Use js console.")
 		   global_d = d;
