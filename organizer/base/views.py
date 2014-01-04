@@ -12,7 +12,7 @@ from django.template import RequestContext, loader
 from base.models import ContentNode, NodeType
 from base.models import Link, LinkType
 from base.models import renderEdit, renderAdd, renderView
-from django.db.models import Q
+from django.db.models import Q, Count, Avg
 import json
 import traceback
 
@@ -354,11 +354,48 @@ def addNode(request):
     else:
         raise NotImplementedError("Must use a POST call here")
 
-def removeNode(request):
+def orphanNodePurge(*args, **kwargs):
+    """
+    Nodes can have linked nodes that contain supplementary info, but that shouldn't
+    exist on their own, and are usually hidden (like position nodes). When a node and its
+    links are deleted, these nodes can be orphaned. 
+    This function checks for such orphan nodes and deletes them.
+    """
+    nodeTypeNames = ['gtd_position']
+    query = Q(nodeType__name__in=nodeTypeNames)
+    partial = (ContentNode.objects.filter(query).annotate(numALinks = Count('aLinks'))
+                                               .annotate(numBLinks = Count('bLinks')))
+    full = partial.filter(numALinks=0).filter(numBLinks=0)
+    namesDeleted = [a.name for a in full]
+    full.delete()
+    return namesDeleted
+                                                         
+    
+
+def deleteNode(request):
     """
 
     """
-    pass
+    response = {}
+    if request.method=="POST":
+        try:
+            nodeName = request.POST['nodeName']
+            node = ContentNode.objects.get(name=nodeName)
+            links = Link.objects.filter(Q(pointA=node) | Q(pointB=node))
+            linkNames = [(a.pointA.name, a.pointB.name) for a in links]
+            response['whichDelete'] = node.name+" "+str(linkNames)
+            orphansDeleted = orphanNodePurge()
+            response['orphansDeleted'] = orphansDeleted
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            response['status'] = 'success'
+            response['msg'] = 'but we did not actually do anything'
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here")
     
 def setNodeType(request):
     pass

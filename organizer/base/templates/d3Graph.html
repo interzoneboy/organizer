@@ -33,6 +33,8 @@
  {% block d3Script %}
  <script src="http://d3js.org/d3.v3.min.js"></script>
  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+ <script src="{% static 'jquery-impromptu.min.js' %}"></script>
+ <link rel="stylesheet" type="text/css" href="{% static 'jquery-impromptu.min.css' %}"/>
  <script>
 
  var spinOpts = {
@@ -76,7 +78,8 @@ var svg = d3.select("body").append("div").attr("id","kbdEventContainer").attr("t
     .attr("height", height)
     .append("g")
     .call(zooom)
-    .append("g");
+    .append("g")
+    .on("mousemove", function(){global_mousey = d3.mouse(this); console.log(global_mousey)});
 
 svg.append("rect")
     .attr("class","overlay")
@@ -130,7 +133,7 @@ function start() {
     link = link.data(force.links());
     link.enter().append("line").attr("class","link").attr("marker-mid", "url(#triangle)");
     link.exit().remove();
-    node = node.data(force.nodes());
+    node = node.data(force.nodes(), function(d){return d.origIndex});
     thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
     thing.append("circle")
 	.attr("r", 12);
@@ -231,6 +234,9 @@ d3.select("#kbdEventContainer")
 	}else if(kcode==85){ // This is 'u' for 'unfix'
 	    flashText("unfixing node");
 	    unfixNode();
+	}else if(kcode==68){ // This is 'd' for 'delete node'
+	    flashText("deleting node");
+	    deleteNode();
 	}else{
 	    flashText(""+kcode);
 	}
@@ -254,6 +260,10 @@ function unfixNode(){
 }
 
 function addLink(){
+    if(currentObjectClick==null){
+	flashText("No object is click selected");
+	return false;
+    }
     var clickIndex = currentObjectClick.__data__.index;
     var clickName = currentObjectClick.__data__.name;
     var mouseIndex = currentObjectMouse.__data__.index;
@@ -267,6 +277,10 @@ function addLink(){
     addLinkToDB(clickName, mouseName, linkType, addLinkCallback);
 }
 function removeLink(){
+    if(currentObjectClick==null){
+	flashText("No object is click selected");
+	return false;
+    }
     var clickIndex = currentObjectClick.__data__.index;
     var clickName = currentObjectClick.__data__.name;
     var mouseIndex = currentObjectMouse.__data__.index;
@@ -406,9 +420,10 @@ function addNode(){
     var newNodeTypeName = $('#nodeTypeSelector')[0].selectedOptions[0].text;
     function addCallback(dbIndex, dbName, dbTypeName){
 	var theNodes = force.nodes();
-	theNodes.push({'origIndex':dbIndex, 'name':dbName, 'type':dbTypeName});
+	theNodes.push({'origIndex':dbIndex, 'name':dbName, 'type':dbTypeName, 'x':global_mousey[0], 'y':global_mousey[1], 'fixed':1});
 	start();
     }
+   
     doAjax({'nodeName':newNodeName, 'nodeTypeName':newNodeTypeName, 'nodeContent':''},
 	   "http://localhost/organizer/addNode/",
 	   function(d,t,j){
@@ -422,6 +437,75 @@ function addNode(){
 	       }
 
 	   });
+}
+
+function deleteNode(){
+    $.prompt('Really delete whole node?',
+	     {buttons:{'Yes':true, 'No':false}, 
+	      focus:1,
+	      submit: function(e,v,m,f){
+
+		  if(v==true){
+		  
+		      var nodeName = currentObjectClick.__data__.name;
+		      function removeNodeFromSVG(){
+			  function remove(arr, name){
+			      for(var i=arr.length; i--;){
+			  	  if(arr[i].name === name){
+				      console.log(i);
+				      console.log(arr.length);
+			  	      var stuff = arr.splice(i,1);
+				      console.log(stuff);
+				      console.log(arr.length);
+			  	  }
+			      }
+			  }
+			  var currentNodes = force.nodes();
+			  globalBefore = currentNodes;
+			  remove(currentNodes, nodeName);
+			  globalAfter = currentNodes;
+			  start();
+
+		      }
+		      function removeLinksFromSVG(){
+			  function findLink(link, name){
+			      if((link.source.name===name) || (link.target.name===name)){
+			  	  return true;
+			      }else{
+			  	  return false;
+			      }
+			  }
+			  function remove(arr, name){
+			      for(var i=arr.length; i--;){
+			  	  if(findLink(arr[i], name)){
+			  	      arr.splice(i,1);
+			  	  }
+			      }
+			  }
+			  var currentLinks = force.links();
+			  remove(currentLinks, nodeName);
+			  start();
+
+		      }
+		      doAjax({'nodeName':nodeName},
+			     "http://localhost/organizer/deleteNode/",
+			     function(d,t,j){
+				 if(d['status']==='success'){
+				     removeNodeFromSVG();
+				     removeLinksFromSVG();
+				     flashText(d['msg']);
+				     currentObjectClick = null;
+				 }else{
+
+				 }
+
+
+			     });
+		  }else{
+		      // do Nothing
+		  }
+	      }
+	     });	      
 }
 
 function editNode(){
