@@ -61,7 +61,7 @@ DATABASES = {
     'default':{
         'ENGINE': "django.db.backends.mysql",
         'USER':"matt",
-        'NAME':"organizer"
+        'NAME':"organizer_dev"
     },
     'unused_sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -90,3 +90,8 @@ STATIC_URL = '/organizerStatic/'
 STATIC_ROOT = '/home/matt/Code/Tools/organizer/static/'
 
 TEMPLATE_DIRS = ('/home/matt/Code/Tools/organizer/organizer/base/templates/',)
+
+
+
+# At deployment, need to change STATIC_URL, STATIC_ROOT, TEMPLATE_DIRS, DATABASES
+# And also the SECRET_KEY section, I suppose...
