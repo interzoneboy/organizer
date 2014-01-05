@@ -337,9 +337,9 @@ function addLinkToDB(aN, bN, lType, addLinkCallback){
                 addLinkCallback();
             }else{
                 alert("Error Occurring on server. Check js console.");
-                console.log(" "+data)
-                console.log(" "+txtStatus)
-                console.log(" "+jqXHR)
+                global_d = data;
+                global_t = txtStatus;
+                global_j = jqXHR;
             }
         },
         error: function(e1,e2,e3){

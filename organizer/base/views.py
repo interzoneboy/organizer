@@ -135,7 +135,9 @@ def addLink(request):
             linky = Link(linkType=linkType,
                          pointA=fromNode,
                          pointB=toNode,
-                         direct="b")
+                         direct="b",
+                         dateCreated=None,
+                         dateModified=None)
             linky.save()
         except Exception,e:
             response['status'] = 'failed'
@@ -340,7 +342,7 @@ def addNode(request):
             nodeTypeName = request.POST['nodeTypeName']
             nt = NodeType.objects.get(name=nodeTypeName)
             nodeContent = request.POST['nodeContent']
-            newNode = ContentNode(name=nodeName, nodeType=nt, content=nodeContent)
+            newNode = ContentNode(name=nodeName, nodeType=nt, content=nodeContent, dateCreated=None, dateModified=None)
             newNode.save()
         except Exception,e:
             response['status'] = 'failed'
@@ -388,13 +390,15 @@ def deleteNode(request):
             response['whichDelete'] = node.name+" "+str(linkNames)
             orphansDeleted = orphanNodePurge()
             response['orphansDeleted'] = orphansDeleted
+            node.delete()
+            links.delete()
         except Exception,e:
             response['status'] = 'failed'
             response['error'] = str(e)
             response['traceback'] = traceback.format_exc()
         else:
             response['status'] = 'success'
-            response['msg'] = 'but we did not actually do anything'
+            response['msg'] = 'Node, links, and orphans deleted.'
         return HttpResponse(json.dumps(response), mimetype="application/json")
     else:
         raise NotImplementedError("Must use a POST call here")

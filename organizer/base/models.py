@@ -34,6 +34,8 @@ class ContentNode(models.Model):
     name = models.CharField(max_length=200, unique=True)
     nodeType = models.ForeignKey('NodeType')
     content = models.TextField()
+    dateCreated = models.DateTimeField(auto_now_add=True)
+    dateModified = models.DateTimeField(auto_now=True)
     
     def getDict(self):
         d = {'name':self.name, 'nodeType':self.nodeType.getDict(), 'content':self.content}
@@ -128,6 +130,8 @@ class Link(models.Model):
     pointA = models.ForeignKey('ContentNode', blank=True, null=True, related_name="aLinks")
     pointB = models.ForeignKey('ContentNode', blank=True, null=True, related_name="bLinks")
     direct = models.CharField(max_length=2, choices=(("n","n"),("a","a"),("b","b")))
+    dateCreated = models.DateTimeField(auto_now_add=True)
+    dateModified = models.DateTimeField(auto_now=True)
     aPosX = models.IntegerField(blank=True, null=True)
     aPosY = models.IntegerField(blank=True, null=True)
     bPosX = models.IntegerField(blank=True, null=True)
