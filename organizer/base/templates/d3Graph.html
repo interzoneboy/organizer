@@ -73,27 +73,27 @@ var drag = force.drag()
 
 zooom = d3.behavior.zoom().scaleExtent([-5,8]).on("zoom", zoom)
 var svg = d3.select("body").append("div").attr("id","kbdEventContainer").attr("tabIndex","1")
-    .append("svg")
+    .append("svg").attr("id","initialSVG")
     .attr("width", width)
     .attr("height", height)
     .append("g")
     .call(zooom)
     .append("g")
-    .on("mousemove", function(){global_mousey = d3.mouse(this); console.log(global_mousey)});
+    .on("mousemove", function(){global_mousey = d3.mouse(this);});
 
 svg.append("rect")
     .attr("class","overlay")
     .attr("width",width)
     .attr("height",height);
 
-svg.append("marker")
+d3.select("#initialSVG").append("marker")
     .attr("id", "triangle")
     .attr("viewBox","0 0 10 10")
-    .attr("refX","0")
+    .attr("refX","20")
     .attr("refY","5")
     .attr("markerUnits", "strokeWidth")
-    .attr("markerWidth", "20")
-    .attr("markerHeight", "15")
+    .attr("markerWidth", "13")
+    .attr("markerHeight", "7")
     .attr("orient", "auto")
     .append("path")
     .attr("d", "M 0 0 L 10 5 L 0 10 z")
@@ -131,7 +131,7 @@ d3.json("{% url 'base.views.getGraph' %}", function(error, graph){
 //          nodes just kept getting stacked on there.
 function start() {
     link = link.data(force.links());
-    link.enter().append("line").attr("class","link").attr("marker-mid", "url(#triangle)");
+    link.enter().append("line").attr("class","link").attr("marker-end", "url(#triangle)");
     link.exit().remove();
     node = node.data(force.nodes(), function(d){return d.origIndex});
     thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
@@ -182,7 +182,6 @@ function dragstart(d){
 globalScale = null;
 globalTranslate = null;
 function zoom(){
-    console.log(d3.event);
     if(d3.event===null){
 	var trans = zooom.translate();
 	var scale = zooom.scale();
@@ -265,6 +264,7 @@ function unfixNode(){
 }
 
 function addLink(){
+    try{
     if(currentObjectClick==null){
 	flashText("No object is click selected");
 	return false;
@@ -280,6 +280,10 @@ function addLink(){
         start();
     }
     addLinkToDB(clickName, mouseName, linkType, addLinkCallback);
+    }catch(err){
+       var errObj = new Error();
+       alert("Error adding link: "+err+"\n"+errObj.stack);
+    }
 }
 function removeLink(){
     if(currentObjectClick==null){
@@ -387,7 +391,6 @@ function storeNodePos(){
     function addNode(n){
 	izFixed = d3.select(n).property('fixed')===1;
 	var x = {'nodeName':n.name,'x':n.x, 'y':n.y, 'fixed':izFixed};
-	console.log(n);
 	return(x);
     }
     
@@ -457,11 +460,7 @@ function deleteNode(){
 			  function remove(arr, name){
 			      for(var i=arr.length; i--;){
 			  	  if(arr[i].name === name){
-				      console.log(i);
-				      console.log(arr.length);
 			  	      var stuff = arr.splice(i,1);
-				      console.log(stuff);
-				      console.log(arr.length);
 			  	  }
 			      }
 			  }

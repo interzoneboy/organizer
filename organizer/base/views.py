@@ -30,11 +30,13 @@ def getAllLinks_json():
     return(allLinks)
 
 
-def getGraphFrom_json(nodeID, linkTypeID=None):
+def getHierarchy_json(rootNodeID, linkType):
     # nodeID is a primary key from the node table, and indicates which node to use as the root
-    # for this retrieval. This will put the "nodeID" root at the "root" position (whatever that means for the
-    # visualization being used -- from our perspective it just means the node is the first in the list of nodes
-    # returned by this function.
+    # for this retrieval. This will return a nested json structure with the given node at the
+    # root, and the child nodes under it in a "children" json attribute. Children are found and
+    # the structure is populated by following <linkType> links from the root recursively.
+    # We attempt to detect loops (which will otherwise cause memory explosions) and perform some
+    # sort of logical error behaviour.
     pass
 
 def getGraph(request):
