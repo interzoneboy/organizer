@@ -86,7 +86,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
-STATIC_URL = '/organizerStatic/'
+STATIC_URL = '/organizer_dev_static/'
 STATIC_ROOT = '/home/matt/Code/Tools/organizer/static/'
 
 TEMPLATE_DIRS = ('/home/matt/Code/Tools/organizer/organizer/base/templates/',)
