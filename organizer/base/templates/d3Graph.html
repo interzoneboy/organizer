@@ -8,7 +8,7 @@
  {% endblock scripts %}
 
  {% block controls %}
-
+ <p>We have access to {{BASE_URL}}</p>
  <select id="linkTypeSelector">
  {% for linkType in linkTypes %}
  <option value="{{linkType.name}}">{{linkType.name}}</option>
@@ -58,8 +58,11 @@
  var spinner = new Spinner(spinOpts);
  var spinnerTarget = document.getElementById('spinner-box');
 
- var width = 1020;
- var height = 800;
+ var width = 2040;
+ var height = 1600;
+
+ //var width = 1020;
+ //var height = 800;
 
 var force = d3.layout.force()
     .size([width,height])
@@ -74,8 +77,11 @@ var drag = force.drag()
 zooom = d3.behavior.zoom().scaleExtent([-5,8]).on("zoom", zoom)
 var svg = d3.select("body").append("div").attr("id","kbdEventContainer").attr("tabIndex","1")
     .append("svg").attr("id","initialSVG")
+    //.attr("viewBox", "0 0 1020 800")
     .attr("width", width)
     .attr("height", height)
+    //.attr("preserveAspectRatio","none")
+    .attr("x","25%").attr("y","25%")
     .append("g")
     .call(zooom)
     .append("g")

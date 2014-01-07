@@ -7,3 +7,4 @@
 /share
 /static
 organizer/organizer/settings.py
+organizer/organizer/wsgi.py

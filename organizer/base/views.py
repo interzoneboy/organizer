@@ -193,6 +193,9 @@ def logDecor(fPath):
                     raise
         return inner
     return decorator
+
+class HandleFixPosError(Exception):
+    pass
             
             
 @logDecor("/tmp/fixNodePos.log")
