@@ -142,9 +142,9 @@ function start() {
     node = node.data(force.nodes(), function(d){return d.origIndex});
     thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
     thing.append("circle")
-	.attr("r", 12);
+	.attr("r", 8);
     thing.append("text")
-	.attr("dx", 12)
+	.attr("dx", 14)
 	.attr("dy", ".15em")
 	.text(function(d){return d.name});
     thing.on("mouseover", function(){
@@ -336,7 +336,7 @@ function addLinkToDB(aN, bN, lType, addLinkCallback){
             spinner.stop();
         },
         type: 'POST',
-        url: 'http://localhost/organizer/addLink/',
+        url: '{{BASE_URL}}{% url "base.views.addLink" %}',
         data: {'from':aN, 'to':bN, 'type':lType, 'csrfmiddlewaretoken':'{{csrf_token}}'}, // data
         success: function(data, txtStatus, jqXHR){
             if(data['status']==="success"){
@@ -381,7 +381,7 @@ function doAjax(datas, url, successFunk){
  
 function removeLinkFromDB(aN, bN, removeLinkCallback){ 
     doAjax({'from':aN, 'to':bN}, 
-	   "http://localhost/organizer/removeLink/",
+	   "{{BASE_URL}}{% url 'base.views.removeLink' %}",
 	   function(data, txtStatus, jqXHR){
 	       if(data['status']==="success"){
 		   removeLinkCallback();
@@ -403,7 +403,7 @@ function storeNodePos(){
     doAjax({'nodeList':JSON.stringify(node.data().map(function(d){return(addNode(d));})),
 	    'posNodeType':'gtd_position',
 	    'posLinkType':'gtd_position'}, 
-	   "http://localhost/organizer/fixNodePos/",
+	   "{{BASE_URL}}{% url 'base.views.fixNodePos' %}",
 	   function(data, txtStatus, jqXHR){
 	       if(data['status']==='success'){
 		   //storeNodeCallback();
@@ -418,7 +418,7 @@ function storeNodePos(){
 function resetNodePos(){
 
     doAjax({'posNodeType':'gtd_position', 'posLinkType':'gtd_position'},
-	   "http://localhost/organizer/resetAllNodePos/",
+	   "{{BASE_URL}}{% url 'base.views.resetAllNodePos' %}",
 	   function(d, t, j){
 	       if(d['status']==='success'){
 		   //resetNodeCallback();
@@ -439,7 +439,7 @@ function addNode(){
     }
    
     doAjax({'nodeName':newNodeName, 'nodeTypeName':newNodeTypeName, 'nodeContent':''},
-	   "http://localhost/organizer/addNode/",
+	   "{{BASE_URL}}{% url 'base.views.addNode' %}",
 	   function(d,t,j){
 	       if(d['status']==='success'){
 		   addCallback(d['dbIndex'], d['dbName'], d['dbTypeName']);
@@ -498,7 +498,7 @@ function deleteNode(){
 
 		      }
 		      doAjax({'nodeName':nodeName},
-			     "http://localhost/organizer/deleteNode/",
+			     "{{BASE_URL}}{% url 'base.views.deleteNode' %}",
 			     function(d,t,j){
 				 if(d['status']==='success'){
 				     removeNodeFromSVG();
@@ -521,7 +521,7 @@ function deleteNode(){
 function editNode(multiple){
     var nodeName = d3.select(currentObjectMouse).data()[0].name;
     doAjax({'nodeName':nodeName},
-	   "http://localhost/organizer/getNodeEditDiv/",
+	   "{{BASE_URL}}{% url 'base.views.getNodeEditDiv' %}",
 	   function(d,t,j){
 	       if(d['status']==='success'){
 		   if(multiple==true){
@@ -544,7 +544,7 @@ function saveNode(nodeEditDivID){
     var nodeName = $('#'+nodeEditDivID+" .nodeName").text();
     var nodeTypeName = $('#'+nodeEditDivID+" .nodeType")[0].selectedOptions[0].text;
     doAjax({'nodeName':nodeName, 'nodeContent':content, 'nodeTypeName':nodeTypeName},
-     "http://localhost/organizer/saveNode/",
+     "{{BASE_URL}}{% url 'base.views.saveNode' %}",
 	   function(d,t,j){
 	       if(d['status']==='success'){
 		   flashText('saved Node'+d['msg'])
