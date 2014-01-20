@@ -1,0 +1,27 @@
+{% extends "md_view_edit.ttml" %}
+
+
+{% block content %}
+<div class="nodeEdit" id="{{node.name}}">
+
+  
+<h1 class="nodeName">{{node.name}}</h1>
+
+
+<div class="defaultView" id="view{{node.name}}">
+</div>
+
+
+
+</div>
+
+<script>
+  (function () {
+  alert("blaaah");
+  //var converter{{node.name}} = new Markdown.Converter();
+  //d3.select("#view{{node.name}}").html(converter{{node.name}}.makeHtml("{{node.content}}"));
+  //console.log({{node.name}});
+  //console.log(converter{{node.name}}.makeHtml({{node.content}}));
+  })();
+</script>
+{% endblock content %}

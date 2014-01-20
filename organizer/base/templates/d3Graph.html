@@ -4,6 +4,7 @@
 
  {% block scripts %}
  <link rel="stylesheet" type="text/css" href="{% static 'd3GraphCSS.css' %}"/>
+ <link rel="stylesheet" type="text/css" href="{% static 'markdownStuff.css' %}"/>
  <script src="{% static 'spin.min.js' %}"></script>
  {% endblock scripts %}
 
@@ -31,11 +32,20 @@
 
 
  {% block d3Script %}
+ <script type="text/javascript" src={% static "Markdown.Converter.js" %}></script>
+ <script type="text/javascript" src={% static "Markdown.Sanitizer.js" %}></script>
+ <script type="text/javascript" src={% static "Markdown.Editor.js" %}></script>
  <script src="http://d3js.org/d3.v3.min.js"></script>
  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
  <script src="{% static 'jquery-impromptu.min.js' %}"></script>
  <link rel="stylesheet" type="text/css" href="{% static 'jquery-impromptu.min.css' %}"/>
  <script>
+
+function startMarkdownEditor(nodeName){
+    var converter = new Markdown.Converter();
+    var editor = new Markdown.Editor(converter, "-"+nodeName);
+    editor.run();
+}
 
  var spinOpts = {
      lines: 8,
@@ -230,6 +240,13 @@ d3.select("#kbdEventContainer")
         }else if(kcode==82){ // This is 'r' for 'removeLink'
             flashText("removing Link");
             removeLink();
+        }else if(kcode==86){
+            flashText("viewing Link");
+            if(d3.event.shiftKey==true){
+                viewNode(true);
+            }else{
+                viewNode(false);
+            }
 	}else if(kcode==65){ // This is 'a' for 'add'
 	    flashText("adding Node");
 	    addNode();
@@ -526,8 +543,12 @@ function editNode(multiple){
 	       if(d['status']==='success'){
 		   if(multiple==true){
 		       d3.select("#editArea").append("div").html(d['divHtml']);
+		       startMarkdownEditor(nodeName);
+                       //$("#editArea").find("script").each(function(i){eval($(this).text());});
 		   }else{
 		       d3.select("#editArea").html(d['divHtml']);
+		       startMarkdownEditor(nodeName);
+                       //$("#editArea").find("script").each(function(i){eval($(this).text());});
 		   }
 	       }else{
 		   alert("Error in getNodeEditDiv. Use js console.")
@@ -538,6 +559,29 @@ function editNode(multiple){
 	   });
     //alert("editNode not yet implemented");
 }
+
+function viewNode(multiple){
+    var nodeName = d3.select(currentObjectMouse).data()[0].name;
+    doAjax({'nodeName':nodeName},
+	   "{{BASE_URL}}{% url 'base.views.getNodeViewDiv' %}",
+	   function(d,t,j){
+	       if(d['status']==='success'){
+		   if(multiple==true){
+		       d3.select("#editArea").append("div").html(d['divHtml']);
+                       $("#editArea").find("script").each(function(i){eval($(this).text());});
+		   }else{
+		       d3.select("#editArea").html(d['divHtml']);
+                       $("#editArea").find("script").each(function(i){eval($(this).text());});
+		   }
+	       }else{
+		   alert("Error in getNodeViewDiv. Use js console.")
+		   global_d = d;
+		   global_t = t;
+		   global_j = j;
+	       }
+	   });
+}
+
 
 function saveNode(nodeEditDivID){
     var content = $('#'+nodeEditDivID+" .nodeContent").val();

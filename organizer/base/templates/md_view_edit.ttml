@@ -1,0 +1,10 @@
+{% load staticfiles %}
+
+<script type="text/javascript" src={% static "Markdown.Converter.js" %}></script>
+<script type="text/javascript" src={% static "Markdown.Sanitizer.js" %}></script>
+<script type="text/javascript" src={% static "Markdown.Editor.js" %}></script>
+
+{% block content %}
+
+
+{% endblock content %}
