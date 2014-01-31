@@ -58,16 +58,15 @@ function startMarkdownEditor(nodeName){
     editor.run();
 }
 
-// function convertMarkdown(content){
-// 	var converter = new Markdown.Converter();
-// 	var html = converter.makeHtml(content);
-// 	return(html);
-// }
+function escapePeriods(strIn){
+	return( strIn.replace(".","\\."));
+}
+
 
 function convertMarkdown(nodeName){
 	var converter = new Markdown.Converter();
-	var htmlContent = converter.makeHtml(d3.select("#view"+nodeName).html());
-	d3.select("#view"+nodeName).html(htmlContent);
+	var htmlContent = converter.makeHtml(d3.select("#view"+escapePeriods(nodeName)).html());
+	d3.select("#view"+escapePeriods(nodeName)).html(htmlContent);
 }
 
  var spinOpts = {

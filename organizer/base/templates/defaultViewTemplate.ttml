@@ -18,9 +18,7 @@
 
 <script>
   (function () {
-  	var htmlContent = convertMarkdown(d3.select("#view{{node.name}}").html());
-  	d3.select("view{{node.name}}").html(htmlContent);
-	//d3.select("#view{{node.name}}").html(htmlContent);
-})();
+  	
+	})();
 </script>
 {% endblock content %}
