@@ -9,6 +9,7 @@
 
 
 <div class="defaultView" id="view{{node.name}}">
+{{node.content}}
 </div>
 
 
@@ -17,11 +18,9 @@
 
 <script>
   (function () {
-  alert("blaaah");
-  //var converter{{node.name}} = new Markdown.Converter();
-  //d3.select("#view{{node.name}}").html(converter{{node.name}}.makeHtml("{{node.content}}"));
-  //console.log({{node.name}});
-  //console.log(converter{{node.name}}.makeHtml({{node.content}}));
-  })();
+  	var htmlContent = convertMarkdown(d3.select("#view{{node.name}}").html());
+  	d3.select("view{{node.name}}").html(htmlContent);
+	//d3.select("#view{{node.name}}").html(htmlContent);
+})();
 </script>
 {% endblock content %}
