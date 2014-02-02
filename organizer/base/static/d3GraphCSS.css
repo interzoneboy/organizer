@@ -47,7 +47,6 @@
     /* width:30%;
     height:30%; */
     opacity:0.9;
-    filter:alpha(opacity=90);
     
 }
 
@@ -60,5 +59,9 @@
     background-color:white;
     opacity:0.9;
     border:solid;
-    filter:alpha(opacity=90);
+    overflow:auto;
+}
+
+#editArea {
+    overflow:auto;
 }
