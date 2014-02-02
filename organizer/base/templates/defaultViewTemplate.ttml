@@ -9,7 +9,7 @@
 
 
 <div class="defaultView" id="view{{node.name}}">
-{{node.content}}
+{{node.content|safe}}
 </div>
 
 

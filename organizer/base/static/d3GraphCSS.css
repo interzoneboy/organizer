@@ -50,8 +50,13 @@
     
 }
 
+#editAreaScroller {
+    height:100%;
+    width:100%;
+    overflow:auto;
+}
 
-#editArea {
+#editAreaContainer {
     position:fixed;
     top:10%;
     left:2%;
@@ -60,5 +65,4 @@
     background-color: white;
     opacity:0.9;
     border:solid;
-    overflow:auto;
 }
