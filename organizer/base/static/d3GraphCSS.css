@@ -50,18 +50,15 @@
     
 }
 
-#editAreaContainer {
+
+#editArea {
     position:fixed;
     top:10%;
     left:2%;
-    height:600px;
+    height:600px; /* The height gets jquery adjusted anyway, so this is arbitrary.*/
     width:500px;
-    background-color:white;
+    background-color: white;
     opacity:0.9;
     border:solid;
-    overflow:auto;
-}
-
-#editArea {
     overflow:auto;
 }

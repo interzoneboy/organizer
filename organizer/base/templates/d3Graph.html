@@ -632,16 +632,14 @@ function saveNode(nodeEditDivID){
 {% endblock d3Script %}
 
 {% block editArea %}
-<div id="editAreaContainer">
 <div id="editArea" tabindex="1"></div>
-</div>
 <script type="text/javascript">
 (function(){
 	var theHeight = $(window).height();
-	$("#editAreaContainer").height(theHeight - (0.15*theHeight));
+	$("#editArea").height(theHeight - (0.15*theHeight));
 })();
 function hideViewEditDiv(){
-	$("#editAreaContainer").toggle(100);
+	$("#editArea").toggle(100);
 }
 // setWindowImageFiles("{% static '' %}");
 // var editAreaContainer = dhtmlwindow.open("editArContWin", 
