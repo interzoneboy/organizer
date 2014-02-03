@@ -1,6 +1,7 @@
 {% extends "md_view_edit.ttml" %}
 
 {% block content %}
+<button type="button" onclick="saveNode('edit{{node.name}}');convertToView('{{node.name}}')">Done Editing</button>
 <div class="nodeEdit" id="edit{{node.name}}">
 
   

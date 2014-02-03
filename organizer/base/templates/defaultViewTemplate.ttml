@@ -2,6 +2,7 @@
 
 
 {% block content %}
+<button type="button" onclick="convertToEdit('{{node.name}}')">Edit</button>
 <div class="nodeEdit" id="{{node.name}}">
 
   
