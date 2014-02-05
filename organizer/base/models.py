@@ -10,6 +10,7 @@ import json
 from django.db import models
 from django.template import Template
 from django.template import Context
+from django.template.loader import render_to_string
 
 # Create your models here.
 
@@ -71,7 +72,7 @@ def renderHelper(node, templateContent):
 class NoTemplateException(Exception):
     pass
 
-def render(node_name, followLink="gtd_type", templateLink="gtd_edit_template"):
+def render(node_name, followLink="gtd_type", templateLink="gtd_edit_template", defaultTemplateName="no_template.ttml"):
     theNode = ContentNode.objects.get(name=node_name)
     def findTemplate(theNode):
         origNodes = []
@@ -99,16 +100,18 @@ def render(node_name, followLink="gtd_type", templateLink="gtd_edit_template"):
         extraStuff = findTemplate(theNode)
         return(renderHelper(theNode, extraStuff.content))
     except NoTemplateException,e:
-        return("<div>NO TEMPLATE AVAILABLE</div>")
+        #return("<div>NO TEMPLATE AVAILABLE</div>")
+        nodeTypeNames = NodeType.objects.all().values_list('name',flat=True)
+        return(render_to_string(defaultTemplateName, {'node':theNode, 'nodeTypes':nodeTypeNames, 'selectedName':theNode.nodeType.name}))
 
 def renderEdit(node_name):
-    return render(node_name, "gtd_child", "gtd_edit_template")
+    return render(node_name, "gtd_child", "gtd_edit_template", "defaultEditTemplate.ttml")
 
 def renderAdd(node_name):
-    return render(node_name, "gtd_child", "gtd_add_template")
+    return render(node_name, "gtd_child", "gtd_add_template", "defaultAddTemplate.ttml")
 
 def renderView(node_name):
-    return render(node_name, "gtd_child", "gtd_view_template")
+    return render(node_name, "gtd_child", "gtd_view_template", "defaultViewTemplate.ttml")
 
 
 class LinkType(models.Model):

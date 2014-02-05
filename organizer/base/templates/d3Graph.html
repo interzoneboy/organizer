@@ -4,11 +4,21 @@
 
  {% block scripts %}
  <link rel="stylesheet" type="text/css" href="{% static 'd3GraphCSS.css' %}"/>
+ <link rel="stylesheet" type="text/css" href="{% static 'markdownStuff.css' %}"/>
+ <link rel="stylesheet" type="text/css" href="{% static 'windowfiles/dhtmlwindow.css' %}"/>
  <script src="{% static 'spin.min.js' %}"></script>
+ <script src="{% static 'windowfiles/dhtmlwindow.js' %}" type="text/javascript">
+/***********************************************
+* DHTML Window Widget- © Dynamic Drive (www.dynamicdrive.com)
+* This notice must stay intact for legal use.
+* Visit http://www.dynamicdrive.com/ for full source code
+***********************************************/
+ </script>
+
  {% endblock scripts %}
 
  {% block controls %}
-
+ <p>We have access to {{BASE_URL}}</p>
  <select id="linkTypeSelector">
  {% for linkType in linkTypes %}
  <option value="{{linkType.name}}">{{linkType.name}}</option>
@@ -25,17 +35,40 @@
 
  <button type="button" onclick="resetNodePos()">ResetNodePos</button>
 
+ <button type="button" onclick="hideViewEditDiv()">Hide View/Edit</button>
+
  <div id="spinner-box"></div>
 
  {% endblock controls %}
 
 
  {% block d3Script %}
+ <script type="text/javascript" src={% static "Markdown.Converter.js" %}></script>
+ <script type="text/javascript" src={% static "Markdown.Editor.js" %}></script>
  <script src="http://d3js.org/d3.v3.min.js"></script>
  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+ <link rel="stylesheet" type="text/css" href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+ <script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
  <script src="{% static 'jquery-impromptu.min.js' %}"></script>
  <link rel="stylesheet" type="text/css" href="{% static 'jquery-impromptu.min.css' %}"/>
  <script>
+
+function startMarkdownEditor(nodeName){
+    var converter = new Markdown.Converter();
+    var editor = new Markdown.Editor(converter, "-"+nodeName);
+    editor.run();
+}
+
+function escapePeriods(strIn){
+	return( strIn.replace(".","\\."));
+}
+
+
+function convertMarkdown(nodeName){
+	var converter = new Markdown.Converter();
+	var htmlContent = converter.makeHtml(d3.select("#view"+escapePeriods(nodeName)).html());
+	d3.select("#view"+escapePeriods(nodeName)).html(htmlContent);
+}
 
  var spinOpts = {
      lines: 8,
@@ -58,8 +91,11 @@
  var spinner = new Spinner(spinOpts);
  var spinnerTarget = document.getElementById('spinner-box');
 
- var width = 1020;
- var height = 800;
+ var width = 2040;
+ var height = 1600;
+
+ //var width = 1020;
+ //var height = 800;
 
 var force = d3.layout.force()
     .size([width,height])
@@ -74,8 +110,11 @@ var drag = force.drag()
 zooom = d3.behavior.zoom().scaleExtent([-5,8]).on("zoom", zoom)
 var svg = d3.select("body").append("div").attr("id","kbdEventContainer").attr("tabIndex","1")
     .append("svg").attr("id","initialSVG")
+    //.attr("viewBox", "0 0 1020 800")
     .attr("width", width)
     .attr("height", height)
+    //.attr("preserveAspectRatio","none")
+    .attr("x","25%").attr("y","25%")
     .append("g")
     .call(zooom)
     .append("g")
@@ -136,9 +175,9 @@ function start() {
     node = node.data(force.nodes(), function(d){return d.origIndex});
     thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
     thing.append("circle")
-	.attr("r", 12);
+	.attr("r", 8);
     thing.append("text")
-	.attr("dx", 12)
+	.attr("dx", 14)
 	.attr("dy", ".15em")
 	.text(function(d){return d.name});
     thing.on("mouseover", function(){
@@ -224,6 +263,13 @@ d3.select("#kbdEventContainer")
         }else if(kcode==82){ // This is 'r' for 'removeLink'
             flashText("removing Link");
             removeLink();
+        }else if(kcode==86){
+            flashText("viewing Link");
+            if(d3.event.shiftKey==true){
+                viewNode(true);
+            }else{
+                viewNode(false);
+            }
 	}else if(kcode==65){ // This is 'a' for 'add'
 	    flashText("adding Node");
 	    addNode();
@@ -330,7 +376,7 @@ function addLinkToDB(aN, bN, lType, addLinkCallback){
             spinner.stop();
         },
         type: 'POST',
-        url: 'http://localhost/organizer/addLink/',
+        url: '{{BASE_URL}}{% url "base.views.addLink" %}',
         data: {'from':aN, 'to':bN, 'type':lType, 'csrfmiddlewaretoken':'{{csrf_token}}'}, // data
         success: function(data, txtStatus, jqXHR){
             if(data['status']==="success"){
@@ -375,7 +421,7 @@ function doAjax(datas, url, successFunk){
  
 function removeLinkFromDB(aN, bN, removeLinkCallback){ 
     doAjax({'from':aN, 'to':bN}, 
-	   "http://localhost/organizer/removeLink/",
+	   "{{BASE_URL}}{% url 'base.views.removeLink' %}",
 	   function(data, txtStatus, jqXHR){
 	       if(data['status']==="success"){
 		   removeLinkCallback();
@@ -397,7 +443,7 @@ function storeNodePos(){
     doAjax({'nodeList':JSON.stringify(node.data().map(function(d){return(addNode(d));})),
 	    'posNodeType':'gtd_position',
 	    'posLinkType':'gtd_position'}, 
-	   "http://localhost/organizer/fixNodePos/",
+	   "{{BASE_URL}}{% url 'base.views.fixNodePos' %}",
 	   function(data, txtStatus, jqXHR){
 	       if(data['status']==='success'){
 		   //storeNodeCallback();
@@ -412,7 +458,7 @@ function storeNodePos(){
 function resetNodePos(){
 
     doAjax({'posNodeType':'gtd_position', 'posLinkType':'gtd_position'},
-	   "http://localhost/organizer/resetAllNodePos/",
+	   "{{BASE_URL}}{% url 'base.views.resetAllNodePos' %}",
 	   function(d, t, j){
 	       if(d['status']==='success'){
 		   //resetNodeCallback();
@@ -433,7 +479,7 @@ function addNode(){
     }
    
     doAjax({'nodeName':newNodeName, 'nodeTypeName':newNodeTypeName, 'nodeContent':''},
-	   "http://localhost/organizer/addNode/",
+	   "{{BASE_URL}}{% url 'base.views.addNode' %}",
 	   function(d,t,j){
 	       if(d['status']==='success'){
 		   addCallback(d['dbIndex'], d['dbName'], d['dbTypeName']);
@@ -492,7 +538,7 @@ function deleteNode(){
 
 		      }
 		      doAjax({'nodeName':nodeName},
-			     "http://localhost/organizer/deleteNode/",
+			     "{{BASE_URL}}{% url 'base.views.deleteNode' %}",
 			     function(d,t,j){
 				 if(d['status']==='success'){
 				     removeNodeFromSVG();
@@ -515,13 +561,20 @@ function deleteNode(){
 function editNode(multiple){
     var nodeName = d3.select(currentObjectMouse).data()[0].name;
     doAjax({'nodeName':nodeName},
-	   "http://localhost/organizer/getNodeEditDiv/",
+	   "{{BASE_URL}}{% url 'base.views.getNodeEditDiv' %}",
 	   function(d,t,j){
 	       if(d['status']==='success'){
 		   if(multiple==true){
 		       d3.select("#editArea").append("div").html(d['divHtml']);
+		       startMarkdownEditor(nodeName);
+                       //$("#editArea").find("script").each(function(i){eval($(this).text());});
 		   }else{
 		       d3.select("#editArea").html(d['divHtml']);
+		       startMarkdownEditor(nodeName);
+                       //$("#editArea").find("script").each(function(i){eval($(this).text());});
+		   }
+		   if($("#editAreaContainer").css("display") === "none"){
+		   		hideViewEditDiv();
 		   }
 	       }else{
 		   alert("Error in getNodeEditDiv. Use js console.")
@@ -533,12 +586,45 @@ function editNode(multiple){
     //alert("editNode not yet implemented");
 }
 
+function viewNode(multiple){
+    var nodeName = d3.select(currentObjectMouse).data()[0].name;
+    doAjax({'nodeName':nodeName},
+	   "{{BASE_URL}}{% url 'base.views.getNodeViewDiv' %}",
+	   function(d,t,j){
+	       	if(d['status']==='success'){
+	       		if(multiple==true){
+	       			d3.select("#editArea").append("div").html(d['divHtml']);
+			        //$("#editarea").find("script").each(function(i){eval($(this).text());});
+			        convertMarkdown(nodeName);
+
+				}else{
+	           		d3.select("#editArea").html(d['divHtml']);
+               		//$("#editarea").find("script").each(function(i){eval($(this).text());});
+               		convertMarkdown(nodeName);
+            	}
+				if($("#editAreaContainer").css("display") === "none"){
+					hideViewEditDiv();
+
+				}
+
+	    	}else{
+
+				alert("Error in getNodeViewDiv. Use js console.")
+			   	global_d = d;
+			   	global_t = t;
+			   	global_j = j;
+	       	}
+		}
+	);
+}
+
+
 function saveNode(nodeEditDivID){
     var content = $('#'+nodeEditDivID+" .nodeContent").val();
     var nodeName = $('#'+nodeEditDivID+" .nodeName").text();
     var nodeTypeName = $('#'+nodeEditDivID+" .nodeType")[0].selectedOptions[0].text;
     doAjax({'nodeName':nodeName, 'nodeContent':content, 'nodeTypeName':nodeTypeName},
-     "http://localhost/organizer/saveNode/",
+     "{{BASE_URL}}{% url 'base.views.saveNode' %}",
 	   function(d,t,j){
 	       if(d['status']==='success'){
 		   flashText('saved Node'+d['msg'])
@@ -555,5 +641,34 @@ function saveNode(nodeEditDivID){
 {% endblock d3Script %}
 
 {% block editArea %}
+<div id="editAreaContainer" class="resizable">
+<button type="buttom" onclick="hideViewEditDiv()">Hide</button>
+<div id="editAreaScroller">
 <div id="editArea" tabindex="1"></div>
+</div>
+</div>
+<p><div>
+<h1>What the heck is going on</h1>
+</div></p>
+<script type="text/javascript">
+(function(){
+	var theHeight = $(window).height();
+	$("#editAreaContainer").height(theHeight - (0.15*theHeight));
+})();
+function hideViewEditDiv(){
+	$("#editAreaContainer").toggle(100);
+}
+
+// Try out the jquery resizable functionality
+$(function(){
+	$(".resizable").resizable();
+});
+
+// setWindowImageFiles("{% static '' %}");
+// var editAreaContainer = dhtmlwindow.open("editArContWin", 
+// 			"div", 
+// 			"editAreaContainer", 
+// 			"View Window",
+// 			"resize=1, scrolling=1","recal");
+</script>
 {% endblock editArea %}

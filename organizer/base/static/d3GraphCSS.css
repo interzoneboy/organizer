@@ -1,4 +1,8 @@
 
+body {
+    font-family: Monda, Helvetica, Arial, sans-serif;
+}
+
 *:focus {
     outline:none;
 }
@@ -39,3 +43,30 @@
     fill:#F3F2F7;
     pointer-events:all;
 }  
+
+#editArContWin {
+    position:absolute;
+    top:25%;
+    left:70%;
+    /* width:30%;
+    height:30%; */
+    opacity:0.9;
+    
+}
+
+#editAreaScroller {
+    height:100%;
+    width:100%;
+    overflow:auto;
+}
+
+#editAreaContainer {
+    position:fixed;
+    top:10%;
+    left:2%;
+    height:600px; /* The height gets jquery adjusted anyway, so this is arbitrary.*/
+    width:500px;
+    background-color: white;
+    opacity:0.9;
+    border:solid;
+}

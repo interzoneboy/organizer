@@ -193,6 +193,9 @@ def logDecor(fPath):
                     raise
         return inner
     return decorator
+
+class HandleFixPosError(Exception):
+    pass
             
             
 @logDecor("/tmp/fixNodePos.log")
@@ -294,6 +297,24 @@ def getNodeEditDiv(request, **kwargs):
         try:
             nodeName = request.POST['nodeName']
             divHTML = renderEdit(nodeName)
+            response['divHtml'] = divHTML
+        except Exception,e:
+            response['status'] = 'failed'
+            response['error'] = str(e)
+            response['traceback'] = traceback.format_exc()
+        else:
+            response['status'] = 'success'
+        return HttpResponse(json.dumps(response), mimetype="application/json")
+    else:
+        raise NotImplementedError("Must use a POST call here")
+        
+@logDecor("/tmp/getNodeViewDiv.log")
+def getNodeViewDiv(request, **kwargs):
+    response = {}
+    if request.method=="POST":
+        try:
+            nodeName = request.POST['nodeName']
+            divHTML = renderView(nodeName)
             response['divHtml'] = divHTML
         except Exception,e:
             response['status'] = 'failed'

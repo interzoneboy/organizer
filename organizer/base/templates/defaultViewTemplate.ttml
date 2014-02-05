@@ -1,0 +1,25 @@
+{% extends "md_view_edit.ttml" %}
+
+
+{% block content %}
+<button type="button" onclick="convertToEdit('{{node.name}}')">Edit</button>
+<div class="nodeEdit" id="{{node.name}}">
+
+  
+<h1 class="nodeName">{{node.name}}</h1>
+
+
+<div class="defaultView" id="view{{node.name}}">
+{{node.content|safe}}
+</div>
+
+
+
+</div>
+
+<script>
+  (function () {
+  	
+	})();
+</script>
+{% endblock content %}

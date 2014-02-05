@@ -1,0 +1,37 @@
+{% extends "md_view_edit.ttml" %}
+
+{% block content %}
+<button type="button" onclick="saveNode('edit{{node.name}}');convertToView('{{node.name}}')">Done Editing</button>
+<div class="nodeEdit" id="edit{{node.name}}">
+
+  
+  <h1 class="nodeName">{{node.name}}</h1>
+  
+  <select class="nodeType">
+    {% for name in nodeTypes %}
+    
+    {% if name == selectedName %}
+    <option value="{{name}}" selected>{{name}}</option>
+    {% else %}
+    <option value="{{name}}">{{name}}</option>
+    {% endif %}
+    
+    {% endfor %}
+  </select>
+  <div class="wmd-panel">
+    <div id="wmd-button-bar-{{node.name}}"></div>
+    <textarea class="wmd-input nodeContent" id="wmd-input-{{node.name}}">{{node.content}}</textarea>
+  </div>
+  <button onclick="saveNode('edit{{node.name}}');">Save Node</button>
+</div>
+
+<script>
+//(function () {
+//  console.log("This gets here");
+//  var converter{{node.name}} = new Markdown.Converter();
+//  var editor{{node.name}} = new Markdown.Editor(converter{{node.name}}, "-{{node.name}}")
+//  editor{{node.name}}.run();
+//  })();
+startMarkdownEditor("{{node.name}}");
+</script>
+{% endblock content %}
