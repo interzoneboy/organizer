@@ -1,6 +1,7 @@
 
 body {
     font-family: Monda, Helvetica, Arial, sans-serif;
+    font-size:0.65em;
 }
 
 *:focus {
@@ -26,17 +27,17 @@ body {
 
 .node text {
     pointer-events: none;
-    font: 10px sans-serif;
+    font: 0.65em;
     fill: black;
 }
 
 .node text.clickSelected {
     fill: blue;
-    font: 14px sans-serif;
+    font: 1.7em sans-serif;
 }
 .node text.mouseOverSelected {
     fill: red;
-    font: 14px sans-serif;
+    font: 1.7em sans-serif;
 }
 
 .overlay {
