@@ -54,20 +54,36 @@
  <script>
 
 function startMarkdownEditor(nodeName){
+    // This function can perfectly well deal with spaces, periods, and 
+    // all this in node names. We don't REQUIRE calling escapeNodeNames
+    // for this.
     var converter = new Markdown.Converter();
     var editor = new Markdown.Editor(converter, "-"+nodeName);
     editor.run();
 }
 
-function escapePeriods(strIn){
-	return( strIn.replace(".","\\."));
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
+
+function escapeNodeNames(strIn){
+	var tmp = replaceAll("\\.","\\.", strIn);
+    var tmp = replaceAll(" ", "\\ ", tmp);
+    var tmp = replaceAll("\\/","\\/", tmp);
+    var tmp = replaceAll("\\(","\\(", tmp);
+    var tmp = replaceAll("\\)","\\)", tmp);
+    var tmp = replaceAll("\\,","\\,", tmp);
+    var tmp = replaceAll("\\'","\\'", tmp);
+    return(tmp);
 }
 
 
 function convertMarkdown(nodeName){
+    // This function uses a d3 select operation and cannot deal with funki characters in the
+    // node names. We need to call escapeNodeNames to get this to work.
 	var converter = new Markdown.Converter();
-	var htmlContent = converter.makeHtml(d3.select("#view"+escapePeriods(nodeName)).html());
-	d3.select("#view"+escapePeriods(nodeName)).html(htmlContent);
+	var htmlContent = converter.makeHtml(d3.select("#view"+escapeNodeNames(nodeName)).html());
+	d3.select("#view"+escapeNodeNames(nodeName)).html(htmlContent);
 }
 
  var spinOpts = {
@@ -620,9 +636,9 @@ function viewNode(multiple){
 
 
 function saveNode(nodeEditDivID){
-    var content = $('#'+nodeEditDivID+" .nodeContent").val();
-    var nodeName = $('#'+nodeEditDivID+" .nodeName").text();
-    var nodeTypeName = $('#'+nodeEditDivID+" .nodeType")[0].selectedOptions[0].text;
+    var content = $('#'+escapeNodeNames(nodeEditDivID)+" .nodeContent").val();
+    var nodeName = $('#'+escapeNodeNames(nodeEditDivID)+" .nodeName").text();
+    var nodeTypeName = $('#'+escapeNodeNames(nodeEditDivID)+" .nodeType")[0].selectedOptions[0].text;
     doAjax({'nodeName':nodeName, 'nodeContent':content, 'nodeTypeName':nodeTypeName},
      "{{BASE_URL}}{% url 'base.views.saveNode' %}",
 	   function(d,t,j){
