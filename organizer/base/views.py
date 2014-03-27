@@ -14,6 +14,7 @@ from base.models import Link, LinkType
 from base.models import renderEdit, renderAdd, renderView
 from django.db.models import Q, Count, Avg
 import json
+import random
 import traceback
 
 
@@ -64,15 +65,24 @@ def getGraph(request):
                 return None
         except Exception,e:
             raise
-    wahoo2 = [(a, getjson(a)) for a in wahoo]
+
+    def addProperties(a):
+        tmp = a
+        tmp.radius = random.uniform(1,80)
+        r = lambda: random.randint(0,255)
+        tmp.color = '#%02X%02X%02X' % (r(), r(), r())
+        return(tmp)
+
+    wahoo2 = [addProperties(a) for a in wahoo]
+    wahoo2 = [(a, getjson(a)) for a in wahoo2]
 
     def makeJSONstr(tt):
         if tt[1]==None:
-            return({'index':tt[0].id, 'origIndex':tt[0].id, 'name':tt[0].name, 'type':tt[0].nodetype})
+            return({'index':tt[0].id, 'origIndex':tt[0].id, 'color':tt[0].color, 'radius':tt[0].radius, 'name':tt[0].name, 'type':tt[0].nodetype})
         elif tt[1]['fixed'] == False:
-            return({'index':tt[0].id, 'origIndex':tt[0].id,'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y']})
+            return({'index':tt[0].id, 'origIndex':tt[0].id, 'color':tt[0].color, 'radius':tt[0].radius, 'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y']})
         elif tt[1]['fixed'] == True:
-            return({'index':tt[0].id, 'origIndex':tt[0].id,'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y'], 'fixed':1})
+            return({'index':tt[0].id, 'origIndex':tt[0].id, 'color':tt[0].color, 'radius':tt[0].radius, 'name':tt[0].name, 'type':tt[0].nodetype, 'x':tt[1]['x'], 'y':tt[1]['y'], 'fixed':1})
         else:
             raise RuntimeError("What am I doing here")
     def filterNodes(nn):
