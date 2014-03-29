@@ -36,13 +36,16 @@
 
  <button type="button" onclick="resetNodePos()">ResetNodePos</button>
 
- <button type="button" onclick="hideViewEditDiv()">Hide View/Edit</button>
+ <button type="button" onclick="hideViewEditDiv()">Show/Hide View/Edit</button>
+
+ <button type="button" onclick="hideSlidersDiv()">Show/Hide Sliders</button>
 </div>
 
-<div>
+<div id="sliderControlsBox">
 <div class="sliderBox">
 <div class="label">Gravity</div>
 <div class="slider" id="gravitySlider"></div>
+<input type="checkbox" id="gravityCheckbox">
 </div>
 
 <div class="sliderBox">
@@ -753,11 +756,15 @@ function saveNode(nodeEditDivID){
 function hideViewEditDiv(){
 	$("#editAreaContainer").toggle(100);
 }
+function hideSlidersDiv(){
+    $("#sliderControlsBox").toggle(100);
+}
 
 // Try out the jquery resizable functionality
 $(function(){
 	$(".resizable").resizable();
     $("#gravitySlider").slider({animate:"fast", min:1, max:200, value:117, slide:function(event,ui){setGravity(ui.value);}});
+    //$("#gravityCheckbox").
     $("#linkDistanceSlider").slider({animate:"fast", min:1, max:500, value:force.linkDistance(), slide:function(event,ui){setLinkDistance(ui.value);}});
     $("#linkStrengthSlider").slider({animate:"fast", min:0, max:1, step:0.01, value:1, slide:function(event,ui){setLinkStrength(ui.value);}});
     $("#chargeSlider").slider({animate:"fast", min:-20000, max:-200, value:-400, slide:function(event,ui){setCharge(ui.value);}});

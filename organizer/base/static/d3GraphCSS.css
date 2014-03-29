@@ -76,18 +76,25 @@ body {
 .sliderBox {
     width:100%;
     overflow:auto;
-    padding:5px;
-    /*float:left;*/
-    /*position:relative;*/
+    padding:5px 10px 10px 5px;
+    float:left;
+    position:relative;
 }
 
 .slider {
-    /*float:left;*/
-    left:75px;
-    width:80%;
+    float:left;
+    left:80px;
+    width:600px;
 }
 
 .label {
     float:left;
-    width:75px;
+    width:80px;
+}
+
+#gravityCheckbox{
+    /*left:50%;*/
+    position:relative;
+    left:75px;
+    width:30px;
 }
