@@ -18,6 +18,7 @@
  {% endblock scripts %}
 
  {% block controls %}
+ <div>
  <p>We have access to {{BASE_URL}}</p>
  <select id="linkTypeSelector">
  {% for linkType in linkTypes %}
@@ -35,7 +36,44 @@
 
  <button type="button" onclick="resetNodePos()">ResetNodePos</button>
 
- <button type="button" onclick="hideViewEditDiv()">Hide View/Edit</button>
+ <button type="button" onclick="hideViewEditDiv()">Show/Hide View/Edit</button>
+
+ <button type="button" onclick="hideSlidersDiv()">Show/Hide Sliders</button>
+</div>
+
+<div id="sliderControlsBox">
+<div class="sliderBox">
+<div class="label">Gravity</div>
+<div class="slider" id="gravitySlider"></div>
+<input type="checkbox" id="gravityCheckbox">
+</div>
+
+<div class="sliderBox">
+<div class="label">Link Distance</div>
+<div class="slider" id="linkDistanceSlider"></div>
+</div>
+
+<div class="sliderBox">
+<div class="label">Link Strength</div>
+<div class="slider" id="linkStrengthSlider"></div>
+</div>
+
+<div class="sliderBox">
+<div class="label">Charge</div>
+<div class="slider" id="chargeSlider"></div>
+</div>
+
+<div class="sliderBox">
+<div class="label">Charge Distance</div>
+<div class="slider" id="chargeDistanceSlider"></div>
+</div>
+
+<div class="sliderBox">
+<div class="label">Theta</div>
+<div class="slider" id="thetaSlider"></div>
+</div>
+
+</div>
 
  <div id="spinner-box"></div>
 
@@ -54,20 +92,36 @@
  <script>
 
 function startMarkdownEditor(nodeName){
+    // This function can perfectly well deal with spaces, periods, and 
+    // all this in node names. We don't REQUIRE calling escapeNodeNames
+    // for this.
     var converter = new Markdown.Converter();
     var editor = new Markdown.Editor(converter, "-"+nodeName);
     editor.run();
 }
 
-function escapePeriods(strIn){
-	return( strIn.replace(".","\\."));
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
+
+function escapeNodeNames(strIn){
+	var tmp = replaceAll("\\.","\\.", strIn);
+    var tmp = replaceAll(" ", "\\ ", tmp);
+    var tmp = replaceAll("\\/","\\/", tmp);
+    var tmp = replaceAll("\\(","\\(", tmp);
+    var tmp = replaceAll("\\)","\\)", tmp);
+    var tmp = replaceAll("\\,","\\,", tmp);
+    var tmp = replaceAll("\\'","\\'", tmp);
+    return(tmp);
 }
 
 
 function convertMarkdown(nodeName){
+    // This function uses a d3 select operation and cannot deal with funki characters in the
+    // node names. We need to call escapeNodeNames to get this to work.
 	var converter = new Markdown.Converter();
-	var htmlContent = converter.makeHtml(d3.select("#view"+escapePeriods(nodeName)).html());
-	d3.select("#view"+escapePeriods(nodeName)).html(htmlContent);
+	var htmlContent = converter.makeHtml(d3.select("#view"+escapeNodeNames(nodeName)).html());
+	d3.select("#view"+escapeNodeNames(nodeName)).html(htmlContent);
 }
 
  var spinOpts = {
@@ -175,9 +229,10 @@ function start() {
     node = node.data(force.nodes(), function(d){return d.origIndex});
     thing = node.enter().append("g").attr("class","node").classed("fixed", function(d){return(d.fixed===1)}).call(drag);
     thing.append("circle")
-	.attr("r", 8);
+	.attr("r", function(d){return(d.radius)})
+    .style("fill", function(d){return(d.color)});
     thing.append("text")
-	.attr("dx", 14)
+	.attr("dx", 5)
 	.attr("dy", ".15em")
 	.text(function(d){return d.name});
     thing.on("mouseover", function(){
@@ -222,33 +277,46 @@ globalScale = null;
 globalTranslate = null;
 function zoom(){
     if(d3.event===null){
-	var trans = zooom.translate();
-	var scale = zooom.scale();
-	svg.attr("transform", "translate("+trans+")scale("+scale+")");
-	globalScale = scale;
-	globalTranslate = trans;
-	
-    }
-    else if(d3.event.sourceEvent.shiftKey==true){
-	if(d3.event.sourceEvent.wheelDelta > 0){
-	    // one thing
-	    var gravity = force.gravity();
-	    force.gravity( gravity * 1.05 );
-	}else{
-	    // other thing
-	    var gravity = force.gravity();
-	    force.gravity( gravity * 0.95 );
-	}
-	start();
-	if(globalScale != null && globalTranslate != null){
-	    zooom.scale(globalScale);
-	    zooom.translate(globalTranslate);
-	}
-	d3.event.sourceEvent.stopPropagation();
+	   var trans = zooom.translate();
+	   var scale = zooom.scale();
+	   svg.attr("transform", "translate("+trans+")scale("+scale+")");
+	   globalScale = scale;
+	   globalTranslate = trans;
+    }else if(d3.event.sourceEvent.shiftKey==true && d3.event.sourceEvent.ctrlKey==true){
+        if(d3.event.sourceEvent.wheelDelta > 0){
+            var linkDistance = force.linkDistance();
+            force.linkDistance((linkDistance + 5));
+        }else{
+            var linkDistance = force.linkDistance();
+            force.linkDistance((linkDistance - 5));
+        }
+        start();
+        if(globalScale != null && globalTranslate != null){
+           zooom.scale(globalScale);
+           zooom.translate(globalTranslate);
+        }
+        d3.event.sourceEvent.stopPropagation();
+        console.log(force.linkDistance());    
+    }else if(d3.event.sourceEvent.shiftKey==true){
+	   if(d3.event.sourceEvent.wheelDelta > 0){
+	        // one thing
+	       var gravity = force.gravity();
+	       force.gravity( gravity * 1.05 );
+	   }else{
+	       // other thing
+	       var gravity = force.gravity();
+	       force.gravity( gravity * 0.95 );
+	   }
+	   start();
+	   if(globalScale != null && globalTranslate != null){
+	       zooom.scale(globalScale);
+	       zooom.translate(globalTranslate);
+	   }
+	   d3.event.sourceEvent.stopPropagation();
     } else {
-	svg.attr("transform", "translate("+d3.event.translate+")scale("+d3.event.scale+")");
-	globalScale = d3.event.scale;
-	globalTranslate = d3.event.translate;
+	   svg.attr("transform", "translate("+d3.event.translate+")scale("+d3.event.scale+")");
+	   globalScale = d3.event.scale;
+	   globalTranslate = d3.event.translate;
     }
 }
 
@@ -291,6 +359,38 @@ d3.select("#kbdEventContainer")
 	    wtf = d3.event;
 	}
     });
+
+function setGravity(newGrav){
+    force.gravity((Math.pow(1.05, newGrav) / 2882.0));
+    start();
+}
+
+function setLinkDistance(newDist){
+    force.linkDistance(newDist);
+    start();
+}
+
+function setLinkStrength(newStr){
+    force.linkStrength(newStr);
+    start();
+}
+
+function setCharge(newChr){
+    force.charge(newChr);
+    start();
+    console.log(force.charge());
+}
+
+function setChargeDistance(newChrDist){
+    force.chargeDistance(newChrDist);
+    start();
+}
+
+function setTheta(newTheta){
+    force.theta(newTheta);
+    start();
+}
+
 function flashText(txt){
     svg.append("text").attr("x","100")
 	.attr("y","100")
@@ -620,9 +720,9 @@ function viewNode(multiple){
 
 
 function saveNode(nodeEditDivID){
-    var content = $('#'+nodeEditDivID+" .nodeContent").val();
-    var nodeName = $('#'+nodeEditDivID+" .nodeName").text();
-    var nodeTypeName = $('#'+nodeEditDivID+" .nodeType")[0].selectedOptions[0].text;
+    var content = $('#'+escapeNodeNames(nodeEditDivID)+" .nodeContent").val();
+    var nodeName = $('#'+escapeNodeNames(nodeEditDivID)+" .nodeName").text();
+    var nodeTypeName = $('#'+escapeNodeNames(nodeEditDivID)+" .nodeType")[0].selectedOptions[0].text;
     doAjax({'nodeName':nodeName, 'nodeContent':content, 'nodeTypeName':nodeTypeName},
      "{{BASE_URL}}{% url 'base.views.saveNode' %}",
 	   function(d,t,j){
@@ -647,9 +747,7 @@ function saveNode(nodeEditDivID){
 <div id="editArea" tabindex="1"></div>
 </div>
 </div>
-<p><div>
-<h1>What the heck is going on</h1>
-</div></p>
+
 <script type="text/javascript">
 (function(){
 	var theHeight = $(window).height();
@@ -658,10 +756,20 @@ function saveNode(nodeEditDivID){
 function hideViewEditDiv(){
 	$("#editAreaContainer").toggle(100);
 }
+function hideSlidersDiv(){
+    $("#sliderControlsBox").toggle(100);
+}
 
 // Try out the jquery resizable functionality
 $(function(){
 	$(".resizable").resizable();
+    $("#gravitySlider").slider({animate:"fast", min:1, max:200, value:117, slide:function(event,ui){setGravity(ui.value);}});
+    //$("#gravityCheckbox").
+    $("#linkDistanceSlider").slider({animate:"fast", min:1, max:500, value:force.linkDistance(), slide:function(event,ui){setLinkDistance(ui.value);}});
+    $("#linkStrengthSlider").slider({animate:"fast", min:0, max:1, step:0.01, value:1, slide:function(event,ui){setLinkStrength(ui.value);}});
+    $("#chargeSlider").slider({animate:"fast", min:-20000, max:-200, value:-400, slide:function(event,ui){setCharge(ui.value);}});
+    $("#chargeDistanceSlider").slider({animate:"fast", min:0, max:100, value:100, slide:function(event,ui){setChargeDistance(Math.pow(2,ui.value))}});
+    $("#thetaSlider").slider({animate:"fast", min:0.1, max:1.0, step:0.01, value:0.8, slide:function(event,ui){setTheta(ui.value);}});
 });
 
 // setWindowImageFiles("{% static '' %}");

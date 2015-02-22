@@ -1,6 +1,7 @@
 
 body {
     font-family: Monda, Helvetica, Arial, sans-serif;
+    font-size:0.65em;
 }
 
 *:focus {
@@ -17,6 +18,7 @@ body {
     fill:#ccc;
     stroke: #000;
     stroke-width: 3px;
+    opacity:0.3;
 }
 
 .node.fixed circle {
@@ -26,17 +28,17 @@ body {
 
 .node text {
     pointer-events: none;
-    font: 10px sans-serif;
+    font: 0.65em;
     fill: black;
 }
 
 .node text.clickSelected {
     fill: blue;
-    font: 14px sans-serif;
+    font: 1.7em sans-serif;
 }
 .node text.mouseOverSelected {
     fill: red;
-    font: 14px sans-serif;
+    font: 1.7em sans-serif;
 }
 
 .overlay {
@@ -69,4 +71,30 @@ body {
     background-color: white;
     opacity:0.9;
     border:solid;
+}
+
+.sliderBox {
+    width:100%;
+    overflow:auto;
+    padding:5px 10px 10px 5px;
+    float:left;
+    position:relative;
+}
+
+.slider {
+    float:left;
+    left:80px;
+    width:600px;
+}
+
+.label {
+    float:left;
+    width:80px;
+}
+
+#gravityCheckbox{
+    /*left:50%;*/
+    position:relative;
+    left:75px;
+    width:30px;
 }
